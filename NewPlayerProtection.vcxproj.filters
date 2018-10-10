@@ -29,6 +29,9 @@
     <ClInclude Include="json.hpp">
       <Filter>Header Files\Includes</Filter>
     </ClInclude>
+    <ClInclude Include="NewPlayerProtectionHooks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NewPlayerProtection.cpp">

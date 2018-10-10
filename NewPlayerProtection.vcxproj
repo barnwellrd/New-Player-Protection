@@ -199,6 +199,7 @@
     <ClInclude Include="NewPlayerProtection.h" />
     <ClInclude Include="NewPlayerProtectionCommands.h" />
     <ClInclude Include="NewPlayerProtectionConfig.h" />
+    <ClInclude Include="NewPlayerProtectionHooks.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Lib\ArkApi.lib" />
