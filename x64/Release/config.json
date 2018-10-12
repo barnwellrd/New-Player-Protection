@@ -1,0 +1,7 @@
+{
+  "NewPlayerProtection": {
+    "RequireAdmin": true,
+    "RequirePermission": true,
+    "DbPathOverride": ""
+  }
+}

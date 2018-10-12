@@ -1,7 +1,19 @@
 #pragma once
 
 #include <fstream>
-#include "json.hpp"
+
+void LoadDB()
+{
+
+	auto& db = NewPlayerProtection::GetDB();
+
+	db << "create table if not exists Players ("
+		"Id integer primary key autoincrement not null,"
+		"SteamId integer default 0,"
+		"Kits text default '{}',"
+		"Points integer default 0"
+		");";
+}
 
 inline void InitConfig()
 {
@@ -12,10 +24,11 @@ inline void InitConfig()
 		return;
 	}
 
-	nlohmann::json configData;
-	file >> configData;
+	file >> NewPlayerProtection::config;
 	file.close();
 
-	RequiresAdmin = configData["NewPlayerProtection"]["RequireAdmin"];
-	RequiresPermission = configData["NewPlayerProtection"].value("RequirePermission", false);
+	LoadDB();
+	RequiresAdmin = NewPlayerProtection::config["NewPlayerProtection"]["RequireAdmin"];
+	RequiresPermission = NewPlayerProtection::config["NewPlayerProtection"].value("RequirePermission", false);
 }
+
