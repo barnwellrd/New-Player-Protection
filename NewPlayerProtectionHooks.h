@@ -2,36 +2,33 @@
 
 DECLARE_HOOK(APrimalStructure_FinalStructurePlacement, bool, APrimalStructure*, APlayerController*, FVector, FRotator, FRotator, APawn *, FName, bool);
 DECLARE_HOOK(AShooterGameMode_HandleNewPlayer, bool, AShooterGameMode*, AShooterPlayerController*, UPrimalPlayerData*,
-AShooterCharacter*, bool);
+	AShooterCharacter*, bool);
+DECLARE_HOOK(ServerRequestLevelUp_Implementation, void, AShooterPlayerController*, UPrimalCharacterStatusComponent*, EPrimalCharacterStatusValue::Type);
+DECLARE_HOOK(AShooterGameMode_Logout, void, AShooterGameMode*, AController*);
+
+//need hook for tribe join
+//need hook for leave tribe
+//need hook for level up
 
 void InitHooks()
 {
 	ArkApi::GetHooks().SetHook("APrimalStructure.FinalStructurePlacement", &Hook_APrimalStructure_FinalStructurePlacement, reinterpret_cast<LPVOID*>(&APrimalStructure_FinalStructurePlacement_original));
-	ArkApi::GetHooks().SetHook("AShooterGameMode.HandleNewPlayer_Implementation", &Hook_AShooterGameMode_HandleNewPlayer,
-		&AShooterGameMode_HandleNewPlayer_original);
+	ArkApi::GetHooks().SetHook("AShooterGameMode.HandleNewPlayer_Implementation", &Hook_AShooterGameMode_HandleNewPlayer, &AShooterGameMode_HandleNewPlayer_original);
+	ArkApi::GetHooks().SetHook("AShooterGameMode.ServerRequestLevelUp_Implementation", &Hook_ServerRequestLevelUp_Implementation, &ServerRequestLevelUp_Implementation_original);
+	ArkApi::GetHooks().SetHook("AShooterGameMode.Logout", &Hook_AShooterGameMode_Logout, &AShooterGameMode_Logout_original);
 }
 
 void RemoveHooks()
 {
 	ArkApi::GetHooks().DisableHook("APrimalStructure.FinalStructurePlacement", &Hook_APrimalStructure_FinalStructurePlacement);
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.HandleNewPlayer_Implementation", &Hook_AShooterGameMode_HandleNewPlayer);
-}
-
-void setStructureInv(APrimalStructure* _this)
-{
-	_this->bCanBeDamaged() = false;
-}
-
-bool _cdecl Hook_APrimalStructure_FinalStructurePlacement(APrimalStructure* _this, APlayerController * PC, FVector AtLocation, FRotator AtRotation, FRotator PlayerViewRotation, APawn * AttachToPawn, FName BoneName, bool bIsFlipped)
-{
-	setStructureInv(_this);
-	return APrimalStructure_FinalStructurePlacement_original(_this, PC, AtLocation, AtRotation, PlayerViewRotation, AttachToPawn, BoneName, bIsFlipped);
+	ArkApi::GetHooks().DisableHook("AShooterGameMode.ServerRequestLevelUp_Implementation", &Hook_ServerRequestLevelUp_Implementation);
+	ArkApi::GetHooks().DisableHook("AShooterGameMode.Logout", &Hook_AShooterGameMode_Logout);
 }
 
 bool IsPlayerExists(uint64 steam_id)
 {
 	auto& db = NewPlayerProtection::GetDB();
-
 	int count = 0;
 
 	try
@@ -43,16 +40,115 @@ bool IsPlayerExists(uint64 steam_id)
 		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 		return false;
 	}
-
 	return count != 0;
 }
 
-sqlite::database& NewPlayerProtection::GetDB()
+void SetPlayerLevel(int level, uint64 steam_id)
 {
-	static sqlite::database db(config["NewPlayerProtection"].value("DbPathOverride", "").empty()
-		? ArkApi::Tools::GetCurrentDir() + "/ArkApi/Plugins/NewPlayerProtection/NewPlayerProtection.db"
-		: config["NewPlayerProtection"]["DbPathOverride"]);
-	return db;
+	auto& db = NewPlayerProtection::GetDB();
+
+	try
+	{
+		db << "UPDATE Players SET Level = ? WHERE SteamId = ?;"
+			<< level << steam_id;
+	}
+	catch (const sqlite::sqlite_exception& exception)
+	{
+		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+	}
+}
+
+int IsPlayerProtected(APlayerController * PC)
+{
+	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(PC);
+	int isProtected = 0;
+	auto& db = NewPlayerProtection::GetDB();
+
+	try
+	{
+		db << "Select Is_New_Player FROM Players WHERE SteamId = ?;"
+			<< steam_id >> isProtected;
+	}
+	catch (const sqlite::sqlite_exception& exception)
+	{
+		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+	}
+	return isProtected;
+}
+
+void DisablePlayerProtection(AShooterPlayerController* _this)
+{
+	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(_this);
+	auto& db = NewPlayerProtection::GetDB();
+
+	try
+	{
+		db << "UPDATE Players SET Is_New_Player = 0 WHERE SteamId = ?;"
+			<< steam_id;
+	}
+	catch (const sqlite::sqlite_exception& exception)
+	{
+		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+	}
+
+	AShooterPlayerState* ASPS = static_cast<AShooterPlayerState*>(_this->PlayerStateField());
+
+	if (ASPS && ASPS->MyPlayerDataStructField())
+	{
+		const uint64 team_id = ASPS->TargetingTeamField();
+		/**
+		* \brief Finds all Structures owned by team
+		*/
+		TArray<AActor*> AllStructures;
+		UGameplayStatics::GetAllActorsOfClass(reinterpret_cast<UObject*>(ArkApi::GetApiUtils().GetWorld()), APrimalStructure::GetPrivateStaticClass(), &AllStructures);
+		TArray<APrimalStructure*> FoundStructures;
+		APrimalStructure* Struc;
+
+		for (AActor* StructActor : AllStructures)
+		{
+			if (!StructActor || (uint64)StructActor->TargetingTeamField() != team_id) continue;
+			Struc = static_cast<APrimalStructure*>(StructActor);
+			FoundStructures.Add(Struc);
+		}
+
+		for (APrimalStructure* st : FoundStructures)
+		{
+			st->bCanBeDamaged() = true;;
+		}
+	}
+}
+
+bool _cdecl Hook_APrimalStructure_FinalStructurePlacement(APrimalStructure* _this, APlayerController * PC, FVector AtLocation, FRotator AtRotation, FRotator PlayerViewRotation, APawn * AttachToPawn, FName BoneName, bool bIsFlipped)
+{
+	if (IsPlayerProtected(PC))
+	{
+		_this->bCanBeDamaged() = false;
+	}
+	return APrimalStructure_FinalStructurePlacement_original(_this, PC, AtLocation, AtRotation, PlayerViewRotation, AttachToPawn, BoneName, bIsFlipped);
+}
+
+//not working????
+void Hook_ServerRequestLevelUp_Implementation(AShooterPlayerController* _this, UPrimalCharacterStatusComponent * forStatusComp, EPrimalCharacterStatusValue::Type ValueType)
+{
+	ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0),
+		"Hook_ServerRequestLevelUp_Implementation Called");
+	//update player level in db here
+	
+	if (ArkApi::IApiUtils::IsPlayerDead(_this))
+	{
+		ServerRequestLevelUp_Implementation_original(_this, forStatusComp, ValueType);
+	}
+
+	APlayerState* player_state = _this->PlayerStateField();
+	AShooterPlayerState* shooter_player_state = static_cast<AShooterPlayerState*>(player_state);
+	int level = shooter_player_state->MyPlayerDataStructField()->MyPersistentCharacterStatsField()->CharacterStatusComponent_HighestExtraCharacterLevelField() + 1;
+	SetPlayerLevel(level, ArkApi::GetApiUtils().GetSteamIdFromController(_this));
+
+	// turn off protection if player is above a certain level here
+	if (level > NewPlayerProtection::MaxLevel)
+		DisablePlayerProtection(_this);
+
+	ServerRequestLevelUp_Implementation_original(_this, forStatusComp, ValueType);
 }
 
 bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlayerController* new_player,
@@ -63,12 +159,21 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 
 	if (!IsPlayerExists(steam_id))
 	{
+		AActor* pc = static_cast<AActor*>(player_character);
+		APlayerState* player_state = static_cast<APlayerState*>(pc);
+		AShooterPlayerState* shooter_player_state = static_cast<AShooterPlayerState*>(player_state);
+
 		auto& db = NewPlayerProtection::GetDB();
+
+		AShooterPlayerState* ASPS = static_cast<AShooterPlayerState*>(new_player->PlayerStateField());
+		const int team_id = ASPS->TargetingTeamField();
+
+		//get player level and check level against max level to set invulnurability
 
 		try
 		{
-			db << "INSERT INTO Players (SteamId) VALUES (?);"
-				<< steam_id;
+			db << "INSERT INTO Players (SteamId, TribeId, Start_DateTime, Level, Is_New_Player) VALUES (?,?,DateTime('now'),?,?);"
+				<< steam_id << team_id << 0 << 1;
 		}
 		catch (const sqlite::sqlite_exception& exception)
 		{
@@ -76,8 +181,89 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 			return AShooterGameMode_HandleNewPlayer_original(_this, new_player, player_data, player_character, is_from_login);
 		}
 	}
-
+	NewPlayerProtection::TimerProt::Get().AddPlayer(steam_id);
 	return AShooterGameMode_HandleNewPlayer_original(_this, new_player, player_data, player_character, is_from_login);
+}
+
+void Hook_AShooterGameMode_Logout(AShooterGameMode* _this, AController* exiting)
+{
+	// Remove player from the online list
+	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(exiting);
+	NewPlayerProtection::TimerProt::TimerProt::Get().RemovePlayer(steam_id);
+	AShooterGameMode_Logout_original(_this, exiting);
+}
+
+NewPlayerProtection::TimerProt::TimerProt()
+{
+	update_interval_ = 1;
+	ArkApi::GetCommands().AddOnTimerCallback("UpdateTimer", std::bind(&NewPlayerProtection::TimerProt::UpdateTimer, this));
+}
+
+NewPlayerProtection::TimerProt& NewPlayerProtection::TimerProt::Get()
+{
+	static TimerProt instance;
+	return instance;
+}
+
+void NewPlayerProtection::TimerProt::AddPlayer(uint64 steam_id)
+{
+	const auto iter = std::find_if(
+		online_players_.begin(), online_players_.end(),
+		[steam_id](const std::shared_ptr<OnlinePlayersData>& data) -> bool { return data->steam_id == steam_id; });
+
+	if (iter != online_players_.end())
+		return;
+
+	const int interval = update_interval_;
+	const auto now = std::chrono::system_clock::now();
+	const auto next_time = now + std::chrono::minutes(interval);
+	online_players_.push_back(std::make_shared<OnlinePlayersData>(steam_id, next_time));
+}
+
+void NewPlayerProtection::TimerProt::RemovePlayer(uint64 steam_id)
+{
+	const auto iter = std::find_if(
+		online_players_.begin(), online_players_.end(),
+		[steam_id](const std::shared_ptr<OnlinePlayersData>& data) -> bool { return data->steam_id == steam_id; });
+
+	if (iter != online_players_.end())
+	{
+		online_players_.erase(std::remove(online_players_.begin(), online_players_.end(), *iter), online_players_.end());
+	}
+}
+
+void NewPlayerProtection::TimerProt::UpdateTimer()
+{
+	const auto now = std::chrono::system_clock::now();
+
+	for (const auto& data : online_players_)
+	{
+		const auto next_time = data->next_update_time;
+		auto diff = std::chrono::duration_cast<std::chrono::seconds>(next_time - now);
+
+		if (diff.count() <= 0)
+		{
+			data->next_update_time = now + std::chrono::minutes(update_interval_);
+			ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0),
+				"TimerProt ticked outter");
+			AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
+
+			if (ArkApi::IApiUtils::IsPlayerDead(player))
+			{
+				ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0),
+					"TimerProt ticked inner");
+				return;
+			}
+			
+			APlayerState* player_state = player->PlayerStateField();
+			AShooterPlayerState* shooter_player_state = static_cast<AShooterPlayerState*>(player_state);
+			int level = shooter_player_state->MyPlayerDataStructField()->MyPersistentCharacterStatsField()->CharacterStatusComponent_HighestExtraCharacterLevelField() + 1;
+			SetPlayerLevel(level, data->steam_id);
+
+			if (level > NewPlayerProtection::MaxLevel)
+				DisablePlayerProtection(player);
+		}
+	}
 }
 
 

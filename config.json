@@ -1,7 +1,21 @@
 {
-  "NewPlayerProtection": {
-    "RequireAdmin": true,
-    "RequirePermission": true,
-    "DbPathOverride": ""
+  "General": {
+      "RequireAdmin": true,
+      "DbPathOverride": "",
+
+    "NewPlayerProtection": {
+      "NewPlayerMaxLevel": 20,
+      "DaysOfProtection": 3,
+      "JoinEstablishedTribeOveride": false,
+
+      "PickOnlyOneProtection": {
+        "AllPlayerStructuresProtected": true,
+
+        "OnlyFirstBedAreaIsProtected": {
+          "Enabled": false,
+          "ProtectedRadius": 10
+        }
+      }
+    }
   }
 }

@@ -1,5 +1,4 @@
 #include <API/ARK/Ark.h>
-
 #include "NewPlayerProtection.h"
 #include "NewPlayerProtectionCommands.h"
 #include "NewPlayerProtectionConfig.h"
@@ -7,6 +6,7 @@
 
 #pragma comment(lib, "ArkApi.lib")
 #pragma comment(lib, "Permissions.lib")
+
 void Init()
 {
 	Log::Get().Init("NewPlayerProtection");
