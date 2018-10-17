@@ -4,17 +4,11 @@
       "DbPathOverride": "",
 
     "NewPlayerProtection": {
-      "NewPlayerMaxLevel": 20,
+      "NewPlayerMaxLevel": 60,
       "DaysOfProtection": 3,
-      "JoinEstablishedTribeOveride": false,
 
       "PickOnlyOneProtection": {
-        "AllPlayerStructuresProtected": true,
-
-        "OnlyFirstBedAreaIsProtected": {
-          "Enabled": false,
-          "ProtectedRadius": 10
-        }
+        "AllPlayerStructuresProtected": true
       }
     }
   }

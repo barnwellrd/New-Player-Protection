@@ -10,10 +10,10 @@ namespace NewPlayerProtection
 	bool RequiresAdmin;
 	int MaxLevel;
 	int DaysOfProtection;
-	bool JoinEstablishedTribeOveride;
+	//bool JoinEstablishedTribeOveride;
 	bool AllPlayerStructuresProtected;
-	bool BedProtectionEnabled;
-	int BedProtectedRadius;
+	//bool BedProtectionEnabled;
+	//int BedProtectedRadius;
 
 	nlohmann::json config;
 	sqlite::database& GetDB();

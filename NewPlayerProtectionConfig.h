@@ -40,9 +40,9 @@ inline void InitConfig()
 	NewPlayerProtection::RequiresAdmin = NewPlayerProtection::config["General"]["RequireAdmin"];
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
 	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
-	NewPlayerProtection::JoinEstablishedTribeOveride = NewPlayerProtection::config["General"]["NewPlayerProtection"]["JoinEstablishedTribeOveride"];
+	//NewPlayerProtection::JoinEstablishedTribeOveride = NewPlayerProtection::config["General"]["NewPlayerProtection"]["JoinEstablishedTribeOveride"];
 	NewPlayerProtection::AllPlayerStructuresProtected = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["AllPlayerStructuresProtected"];
-	NewPlayerProtection::BedProtectionEnabled = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["OnlyFirstBedAreaIsProtected"]["Enabled"];
-	NewPlayerProtection::BedProtectedRadius = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["OnlyFirstBedAreaIsProtected"]["ProtectedRadius"];
+	//NewPlayerProtection::BedProtectionEnabled = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["OnlyFirstBedAreaIsProtected"]["Enabled"];
+	//NewPlayerProtection::BedProtectedRadius = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["OnlyFirstBedAreaIsProtected"]["ProtectedRadius"];
 }
 
