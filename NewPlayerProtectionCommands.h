@@ -1,17 +1,16 @@
 #pragma once
 
 #include <Permissions.h>
-
 #include "NewPlayerProtection.h"
 
 inline void ProtectStructure(APlayerController* player, FString* message, bool boolean )
 {
 	AShooterPlayerController* shooter_controller = static_cast<AShooterPlayerController*>(player);
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || RequiresAdmin && !shooter_controller->bIsAdmin()())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || NewPlayerProtection::RequiresAdmin && !shooter_controller->bIsAdmin()())
 		return;
 
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
-	if (RequiresPermission && !Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
+	if (!Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
 	{
 		ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(255, 0, 0),
 		                                        "You don't have permissions to use this command");
@@ -73,7 +72,6 @@ inline void ProtectStructure(APlayerController* player, FString* message, bool b
 				for (APrimalStructure* ls : linkedStructures)
 				{
 					tempLS.Append(ls->LinkedStructuresField());
-
 				}
 				for (APrimalStructure* templs : tempLS)
 				{
@@ -101,11 +99,11 @@ inline void ProtectStructure(APlayerController* player, FString* message, bool b
 inline void UnprotectStructure(APlayerController* player, FString* message, bool boolean)
 {
 	AShooterPlayerController* shooter_controller = static_cast<AShooterPlayerController*>(player);
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || RequiresAdmin && !shooter_controller->bIsAdmin()())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || NewPlayerProtection::RequiresAdmin && !shooter_controller->bIsAdmin()())
 		return;
 
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
-	if (RequiresPermission && !Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
+	if (!Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
 	{
 		ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(255, 0, 0),
 			"You don't have permissions to use this command");
@@ -149,7 +147,6 @@ inline void UnprotectStructure(APlayerController* player, FString* message, bool
 		if (ASPS && ASPS->MyPlayerDataStructField())
 		{
 			const int teamId = Structure->TargetingTeamField();
-
 			Structure->MaxHealthField() = default_structure->HealthField();
 			Structure->HealthField() = default_structure->HealthField();
 			Structure->UpdatedHealth(true);
@@ -162,7 +159,6 @@ inline void UnprotectStructure(APlayerController* player, FString* message, bool
 				for (APrimalStructure* ls : linkedStructures)
 				{
 					tempLS.Append(ls->LinkedStructuresField());
-
 				}
 				for (APrimalStructure* templs : tempLS)
 				{
@@ -190,11 +186,11 @@ inline void UnprotectStructure(APlayerController* player, FString* message, bool
 inline void ProtectTribe(APlayerController* player, FString* message, bool boolean)
 {
 	AShooterPlayerController* shooter_controller = static_cast<AShooterPlayerController*>(player);
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || RequiresAdmin && !shooter_controller->bIsAdmin()())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || NewPlayerProtection::RequiresAdmin && !shooter_controller->bIsAdmin()())
 		return;
 
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
-	if (RequiresPermission && !Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
+	if (!Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
 	{
 		ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(255, 0, 0),
 			"You don't have permissions to use this command");
@@ -238,7 +234,6 @@ inline void ProtectTribe(APlayerController* player, FString* message, bool boole
 		if (ASPS && ASPS->MyPlayerDataStructField())
 		{
 			const int teamId = Structure->TargetingTeamField();
-
 			/**
 			* \brief Finds all Structures owned by team
 			*/
@@ -274,11 +269,11 @@ inline void ProtectTribe(APlayerController* player, FString* message, bool boole
 inline void UnprotectTribe(APlayerController* player, FString* message, bool boolean)
 {
 	AShooterPlayerController* shooter_controller = static_cast<AShooterPlayerController*>(player);
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || RequiresAdmin && !shooter_controller->bIsAdmin()())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || NewPlayerProtection::RequiresAdmin && !shooter_controller->bIsAdmin()())
 		return;
 
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
-	if (RequiresPermission && !Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
+	if (!Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
 	{
 		ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(255, 0, 0),
 			"You don't have permissions to use this command");
@@ -296,7 +291,6 @@ inline void UnprotectTribe(APlayerController* player, FString* message, bool boo
 		if (ASPS && ASPS->MyPlayerDataStructField())
 		{
 			const int teamId = Structure->TargetingTeamField();
-
 			/**
 			* \brief Finds all Structures owned by team
 			*/
@@ -332,11 +326,11 @@ inline void UnprotectTribe(APlayerController* player, FString* message, bool boo
 inline void InvStructure(APlayerController* player, FString* message, bool boolean)
 {
 	AShooterPlayerController* shooter_controller = static_cast<AShooterPlayerController*>(player);
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || RequiresAdmin && !shooter_controller->bIsAdmin()())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || NewPlayerProtection::RequiresAdmin && !shooter_controller->bIsAdmin()())
 		return;
 
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
-	if (RequiresPermission && !Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
+	if (!Permissions::IsPlayerHasPermission(steam_id, "StructureHealth"))
 	{
 		ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(255, 0, 0),
 			"You don't have permissions to use this command");
@@ -368,7 +362,6 @@ inline void InvStructure(APlayerController* player, FString* message, bool boole
 		ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(255, 0, 0), "<Boolean> must be between 0 and 1!");
 		return;
 	}
-	
 
 	AActor* Actor = shooter_controller->GetPlayerCharacter()->GetAimedActor(ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
 		false, false);
@@ -382,29 +375,6 @@ inline void InvStructure(APlayerController* player, FString* message, bool boole
 		{
 			Structure->bCanBeDamaged() = false;
 			Structure->UpdatedHealth(true);
-			/*TArray<APrimalStructure*> linkedStructures = Structure->LinkedStructuresField();
-
-			for (int cnt = 0; cnt < AttachedRadius - 1; cnt++)
-			{
-				TArray<APrimalStructure*> tempLS;
-
-				for (APrimalStructure* ls : linkedStructures)
-				{
-					tempLS.Append(ls->LinkedStructuresField());
-
-				}
-				for (APrimalStructure* templs : tempLS)
-				{
-					linkedStructures.AddUnique(templs);
-				}
-			}
-
-			for (APrimalStructure* ls : linkedStructures)
-			{
-				ls->MaxHealthField() = (default_structure->HealthField() * HealthMultiplier);
-				ls->HealthField() = (default_structure->HealthField() * HealthMultiplier);
-				ls->UpdatedHealth(true);
-			}*/
 			ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(0, 255, 0), "{} updated structure to be invincible!",
 				shooter_controller->GetPlayerCharacter()->PlayerNameField().ToString().c_str());
 		}

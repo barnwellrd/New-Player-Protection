@@ -1,0 +1,15 @@
+{
+  "General": {
+      "RequireAdmin": true,
+      "DbPathOverride": "",
+
+    "NewPlayerProtection": {
+      "NewPlayerMaxLevel": 60,
+      "DaysOfProtection": 3,
+
+      "PickOnlyOneProtection": {
+        "AllPlayerStructuresProtected": true
+      }
+    }
+  }
+}
