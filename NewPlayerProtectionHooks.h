@@ -217,19 +217,22 @@ void UpdateProtectionByTribe()
 	auto& db = NewPlayerProtection::GetDB();
 
 
-	uint64 tribe_id;
+	uint64 tribe_id = 0;
 
-	try
+	do
 	{
-		db << "SELECT DISTINCT TribeId FROM Players WHERE Is_Protected_Player = 0 AND TribeId != 0;" >> tribe_id;
-	}
-	catch (const sqlite::sqlite_exception& exception)
-	{
-		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
-	}
+		try
+		{
+			db << "SELECT DISTINCT TribeId FROM Players WHERE Is_New_Player = 0 AND TribeId IN (SELECT DISTINCT TribeId FROM Players WHERE Is_New_Player = 1);" >> tribe_id;
+		}
+		catch (const sqlite::sqlite_exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+		}
 
+		DisableTribeProtection(tribe_id);
 
-	DisableTribeProtection(tribe_id);
+	} while (tribe_id != 0);
 }
 
 bool _cdecl Hook_APrimalStructure_FinalStructurePlacement(APrimalStructure* _this, APlayerController * PC, FVector AtLocation, FRotator AtRotation, FRotator PlayerViewRotation, APawn * AttachToPawn, FName BoneName, bool bIsFlipped)
@@ -270,6 +273,7 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 		}
 	}
 	NewPlayerProtection::TimerProt::Get().AddPlayer(steam_id);
+	UpdateProtectionByTribe();
 	return AShooterGameMode_HandleNewPlayer_original(_this, new_player, player_data, player_character, is_from_login);
 }
 
@@ -281,12 +285,12 @@ void Hook_AShooterGameMode_Logout(AShooterGameMode* _this, AController* exiting)
 	AShooterGameMode_Logout_original(_this, exiting);
 }
 
-//need to add tribe member checking in here
 bool Hook_AddToTribe(AShooterPlayerState* player, FTribeData * MyNewTribe, bool bMergeTribe, bool bForce, bool bIsFromInvite, APlayerController * InviterPC) {
 	bool result = AddToTribe_original(player, MyNewTribe, bMergeTribe, bForce, bIsFromInvite, InviterPC);		
 	uint64 tribeId = MyNewTribe->TribeIDField();
 	uint64 steamId = ArkApi::GetApiUtils().GetSteamIdFromController(player->GetOwnerController());
 	SetTribeId(tribeId, steamId);
+	UpdateProtectionByTribe();
 	return result;
 }
 
@@ -304,7 +308,7 @@ void Hook_ServerRequestLeaveTribe_Implementation(AShooterPlayerState* player) {
 
 NewPlayerProtection::TimerProt::TimerProt()
 {
-	update_interval_ = 10;
+	update_interval_ = NewPlayerProtection::ProtectionTimerUpdateIntervalInMin;
 	ArkApi::GetCommands().AddOnTimerCallback("UpdateTimer", std::bind(&NewPlayerProtection::TimerProt::UpdateTimer, this));
 }
 
@@ -348,11 +352,11 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 	for (const auto& data : online_players_)
 	{
 		const auto next_time = data->next_update_time;
-		auto diff = std::chrono::duration_cast<std::chrono::seconds>(next_time - now);
+		auto diff = std::chrono::duration_cast<std::chrono::minutes>(next_time - now);
 
 		if (diff.count() <= 0)
 		{
-			data->next_update_time = now + std::chrono::seconds(update_interval_);
+			data->next_update_time = now + std::chrono::minutes(update_interval_);
 			AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
 
 			if (ArkApi::IApiUtils::IsPlayerDead(player))
@@ -371,14 +375,16 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 				uint64 tribe_id = GetExpiredTribesProtection(data->steam_id);
 				DisableTribeProtection(tribe_id);
 			}
+
+			uint64 steam_id = GetExpiredPlayersProtection();
+
+			if (steam_id != 0)
+			{
+				uint64 tribe_id = GetExpiredTribesProtection(steam_id);
+				DisableTribeProtection(tribe_id);
+			}
+			UpdateProtectionByTribe();
 		}
-		uint64 steam_id = GetExpiredPlayersProtection();
-		if (steam_id != 0)
-		{
-			uint64 tribe_id = GetExpiredTribesProtection(steam_id);
-			DisableTribeProtection(tribe_id);
-		}
-		UpdateProtectionByTribe();
 	}
 }
 

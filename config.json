@@ -1,7 +1,8 @@
 {
   "General": {
       "RequireAdmin": true,
-      "DbPathOverride": "",
+    "DbPathOverride": "",
+    "ProtectionTimerUpdateIntervalInMin": 10,
 
     "NewPlayerProtection": {
       "NewPlayerMaxLevel": 60,

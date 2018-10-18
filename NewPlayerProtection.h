@@ -8,6 +8,7 @@
 namespace NewPlayerProtection
 {
 	bool RequiresAdmin;
+	int ProtectionTimerUpdateIntervalInMin;
 	int MaxLevel;
 	int DaysOfProtection;
 	//bool JoinEstablishedTribeOveride;
