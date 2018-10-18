@@ -38,6 +38,7 @@ inline void InitConfig()
 	LoadDB();
 
 	NewPlayerProtection::RequiresAdmin = NewPlayerProtection::config["General"]["RequireAdmin"];
+	NewPlayerProtection::ProtectionTimerUpdateIntervalInMin = NewPlayerProtection::config["General"]["ProtectionTimerUpdateIntervalInMin"];
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
 	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
 	//NewPlayerProtection::JoinEstablishedTribeOveride = NewPlayerProtection::config["General"]["NewPlayerProtection"]["JoinEstablishedTribeOveride"];
