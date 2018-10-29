@@ -15,8 +15,7 @@ void LoadDB()
 	auto& db = NewPlayerProtection::GetDB();
 
 	db << "create table if not exists Players ("
-		"Id integer primary key autoincrement not null,"
-		"SteamId integer default 0,"
+		"SteamId integer primary key not null,"
 		"TribeId integer default 0,"
 		"Start_DateTime text default '',"
 		"Level integer default 0,"
@@ -38,12 +37,11 @@ inline void InitConfig()
 	LoadDB();
 
 	NewPlayerProtection::RequiresAdmin = NewPlayerProtection::config["General"]["RequireAdmin"];
-	NewPlayerProtection::ProtectionTimerUpdateIntervalInMin = NewPlayerProtection::config["General"]["ProtectionTimerUpdateIntervalInMin"];
+	NewPlayerProtection::PlayerUpdateIntervalInMins = NewPlayerProtection::config["General"]["PlayerUpdateIntervalInMins"];
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
 	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
-	//NewPlayerProtection::JoinEstablishedTribeOveride = NewPlayerProtection::config["General"]["NewPlayerProtection"]["JoinEstablishedTribeOveride"];
 	NewPlayerProtection::AllPlayerStructuresProtected = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["AllPlayerStructuresProtected"];
-	//NewPlayerProtection::BedProtectionEnabled = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["OnlyFirstBedAreaIsProtected"]["Enabled"];
-	//NewPlayerProtection::BedProtectedRadius = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["OnlyFirstBedAreaIsProtected"]["ProtectedRadius"];
+	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
+	NewPlayerProtection::next_db_update = std::chrono::system_clock::now();
 }
 
