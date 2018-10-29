@@ -20,3 +20,5 @@
 \.vs/NewPlayerProtection/v15/Browse\.VC\.db
 
 *.ipch
+
+*.dll
