@@ -49,6 +49,7 @@ std::chrono::time_point<std::chrono::system_clock> NewPlayerProtection::GetDateT
 	ttm.tm_hour = HH; // Hour of the day [00-23]
 	ttm.tm_min = MM;
 	ttm.tm_sec = SS;
+	ttm.tm_isdst = -1;
 
 	time_t ttime_t = mktime(&ttm);
 
@@ -111,16 +112,14 @@ inline void InitConfig()
 	file >> NewPlayerProtection::config;
 	file.close();
 
-	LoadDB();
-	LoadDataBase();
-
 	NewPlayerProtection::RequiresAdmin = NewPlayerProtection::config["General"]["RequireAdmin"];
 	NewPlayerProtection::PlayerUpdateIntervalInMins = NewPlayerProtection::config["General"]["PlayerUpdateIntervalInMins"];
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
 	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
 	NewPlayerProtection::AllPlayerStructuresProtected = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["AllPlayerStructuresProtected"];
-
 	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
-	NewPlayerProtection::next_db_update = std::chrono::system_clock::now();
+
+	LoadDB();
+	LoadDataBase();
 }
 
