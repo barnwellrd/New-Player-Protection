@@ -4,7 +4,6 @@
 #include <API/UE/Containers/FString.h>
 #include "hdr/sqlite_modern_cpp.h"
 #include "json.hpp"
-
  
 namespace NewPlayerProtection
 {
@@ -16,13 +15,11 @@ namespace NewPlayerProtection
 	std::chrono::time_point<std::chrono::system_clock>  next_player_update;
 	std::chrono::time_point<std::chrono::system_clock>  next_db_update;
 
-
-	//bool BedProtectionEnabled;
-	//int BedProtectedRadius;
-
 	nlohmann::json config;
 	sqlite::database& GetDB();
-	//FString GetText(const std::string& str);
+
+	std::string GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime);
+	std::chrono::time_point<std::chrono::system_clock> GetDateTime(std::string timestamp);
 
 	class TimerProt
 	{
@@ -40,10 +37,7 @@ namespace NewPlayerProtection
 					int isNewPlayer)
 					:
 					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), level(level), isNewPlayer(isNewPlayer)
-				{
-
-				}
-
+				{}
 				uint64 steam_id;
 				uint64 tribe_id;
 				std::chrono::time_point<std::chrono::system_clock> startDateTime;
@@ -57,10 +51,7 @@ namespace NewPlayerProtection
 				int isNewPlayer) 
 					: 
 					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), level(level), isNewPlayer(isNewPlayer)
-				{
-
-				}
-
+				{}
 				uint64 steam_id;
 				uint64 tribe_id;
 				std::chrono::time_point<std::chrono::system_clock> startDateTime;
@@ -75,20 +66,20 @@ namespace NewPlayerProtection
 
 			int player_update_interval_;
 			int db_update_interval_;
+
 			std::vector<std::shared_ptr<OnlinePlayersData>> online_players_;
 			std::vector<std::shared_ptr<AllPlayerData>> all_players_;
 
 			void AddOnlinePlayer(uint64 steam_id);
 			void AddNewPlayer(uint64 steam_id, uint64 tribe_id);
-			void AddPlayer(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level,
-				int isNewPlayer);
+			void AddPlayer(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level, int isNewPlayer);
 			void RemovePlayer(uint64 steam_id);
+
 			void UpdateLevel(std::shared_ptr <OnlinePlayersData> data);
 			void UpdateTribe(std::shared_ptr <OnlinePlayersData> data);
-			//void UpdateNewPlayer(std::shared_ptr <OnlinePlayersData> data);
+
 			std::vector<std::shared_ptr<OnlinePlayersData>> GetOnlinePlayers();
 			std::vector<std::shared_ptr<AllPlayerData>> GetAllPlayers();
-
 	};
 }
 

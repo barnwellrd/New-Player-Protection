@@ -32,84 +32,6 @@ void RemoveHooks()
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.SaveWorld", &Hook_AShooterGameMode_SaveWorld);
 }
 
-std::string GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime)
-{
-	using namespace std;
-	using namespace std::chrono;
-
-	auto ttime_t = system_clock::to_time_t(datetime);
-	auto tp_sec = system_clock::from_time_t(ttime_t);
-	milliseconds ms = duration_cast<milliseconds>(datetime - tp_sec);
-
-	std::tm * ttm = localtime(&ttime_t);
-
-	char date_time_format[] = "%Y.%m.%d-%H.%M.%S";
-
-	char time_str[] = "yyyy.mm.dd.HH-MM.SS.fff";
-
-	strftime(time_str, strlen(time_str), date_time_format, ttm);
-
-	string result(time_str);
-	result.append(".");
-	result.append(to_string(ms.count()));
-
-	return result;
-}
-
-std::chrono::time_point<std::chrono::system_clock> GetDateTime(std::string timestamp)
-{
-	using namespace std;
-	using namespace std::chrono;
-
-	int yyyy, mm, dd, HH, MM, SS, fff;
-
-	char scanf_format[] = "%4d.%2d.%2d-%2d.%2d.%2d.%3d";
-
-	sscanf(timestamp.c_str(), scanf_format, &yyyy, &mm, &dd, &HH, &MM, &SS, &fff);
-
-	tm ttm = tm();
-	ttm.tm_year = yyyy - 1900; // Year since 1900
-	ttm.tm_mon = mm - 1; // Month since January 
-	ttm.tm_mday = dd; // Day of the month [1-31]
-	ttm.tm_hour = HH; // Hour of the day [00-23]
-	ttm.tm_min = MM;
-	ttm.tm_sec = SS;
-
-	time_t ttime_t = mktime(&ttm);
-
-	system_clock::time_point time_point_result = std::chrono::system_clock::from_time_t(ttime_t);
-
-	time_point_result += std::chrono::milliseconds(fff);
-	return time_point_result;
-}
-
-void LoadDataBase()
-{
-	auto& db = NewPlayerProtection::GetDB();
-
-	try
-	{
-		auto res = db << "SELECT * FROM Players;";
-
-
-			res >> [](uint64 steamid, uint64 tribeid, std::string startdate, int level, int isnewplayer)
-			{
-				NewPlayerProtection::TimerProt::Get().AddPlayer(steamid, tribeid, GetDateTime(startdate), level, isnewplayer);
-			};
-
-	}
-	catch (const sqlite::sqlite_exception& exception)
-	{
-		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
-	}
-}
-
-constexpr std::chrono::hours operator ""h(unsigned long long h)
-{
-	return std::chrono::hours(h);
-}
-
-
 bool IsPlayerExists(uint64 steam_id)
 {
 	/*auto& db = NewPlayerProtection::GetDB();
@@ -131,7 +53,19 @@ bool IsPlayerExists(uint64 steam_id)
 	for (const auto& data : all_players_)
 	{
 		if (data->steam_id == steam_id)
+		{
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
 			return 1;
+		}
+
 	}
 	return exists;
 }
@@ -203,6 +137,15 @@ void RemoveExpiredTribesProtection()
 		if (allData->startDateTime < endTime || allData->level >= NewPlayerProtection::MaxLevel)
 		{
 			allData->isNewPlayer = 0;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, allData->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, allData->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(allData->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, allData->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, allData->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
 			DisableTribeProtection(allData->tribe_id);
 
 			//update all_players protection with same tribe id
@@ -211,6 +154,14 @@ void RemoveExpiredTribesProtection()
 				if (allData->tribe_id == moreAllData->tribe_id)
 				{
 					moreAllData->isNewPlayer = 0;
+
+					Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, moreAllData->steam_id);
+					Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, moreAllData->tribe_id);
+					Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(moreAllData->startDateTime));
+					Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, moreAllData->level);
+					Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, moreAllData->isNewPlayer);
+					Log::GetLog()->warn("---------------------------------------------------------------------------------");
+					Log::GetLog()->warn("---------------------------------------------------------------------------------");
 				}
 			}
 
@@ -220,10 +171,26 @@ void RemoveExpiredTribesProtection()
 				if (allData->steam_id == onlineData->steam_id)
 				{
 					onlineData->isNewPlayer = 0;
+
+					Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, onlineData->steam_id);
+					Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, onlineData->tribe_id);
+					Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(onlineData->startDateTime));
+					Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, onlineData->level);
+					Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, onlineData->isNewPlayer);
+					Log::GetLog()->warn("---------------------------------------------------------------------------------");
+					Log::GetLog()->warn("---------------------------------------------------------------------------------");
 				}
 				if (allData->tribe_id == onlineData->tribe_id)
 				{
 					onlineData->isNewPlayer = 0;
+
+					Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, onlineData->steam_id);
+					Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, onlineData->tribe_id);
+					Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(onlineData->startDateTime));
+					Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, onlineData->level);
+					Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, onlineData->isNewPlayer);
+					Log::GetLog()->warn("---------------------------------------------------------------------------------");
+					Log::GetLog()->warn("---------------------------------------------------------------------------------");
 				}
 			}
 		}
@@ -256,6 +223,14 @@ int IsPlayerProtected(APlayerController * PC)
 	{
 		if (data->steam_id == steam_id)
 		{
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
 			return data->isNewPlayer;
 		}
 	}
@@ -331,17 +306,30 @@ uint64 GetMaxUnknownTribeId()
 				tribeid = data->tribe_id;
 		}
 	}
+	Log::GetLog()->warn("(Debug: {}) MaxTribeID		: {}", __FUNCTION__, (tribeid+1));
+
+	Log::GetLog()->warn("---------------------------------------------------------------------------------");
+	Log::GetLog()->warn("---------------------------------------------------------------------------------");
 	return tribeid+1;
 }
 
 void UpdateDB(std::shared_ptr<NewPlayerProtection::TimerProt::AllPlayerData> data)
 {
+
+	Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+	Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+	Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+	Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+	Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+	Log::GetLog()->warn("---------------------------------------------------------------------------------");
+	Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
 	auto& db = NewPlayerProtection::GetDB();
 
 	try
 	{
 		db << "INSERT OR REPLACE INTO Players(SteamId, TribeId, Start_DateTime, Level, Is_New_Player) VALUES(?,?,?,?,?);"
-			<< data->steam_id << data->tribe_id << GetTimestamp(data->startDateTime) << data->level << data->isNewPlayer;
+			<< data->steam_id << data->tribe_id << NewPlayerProtection::GetTimestamp(data->startDateTime) << data->level << data->isNewPlayer;
 
 	}
 	catch (const sqlite::sqlite_exception& exception)
@@ -390,7 +378,6 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 			if (team_id == 0)
 				team_id = 100000;
 
-			NewPlayerProtection::TimerProt::Get().AddNewPlayer(steam_id, team_id);
 
 			/*try
 			{
@@ -403,6 +390,9 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 				return AShooterGameMode_HandleNewPlayer_original(_this, new_player, player_data, player_character, is_from_login);
 			}*/
 		}
+
+		NewPlayerProtection::TimerProt::Get().AddNewPlayer(steam_id, team_id);
+
 		/*else
 		{
 
@@ -439,14 +429,34 @@ bool Hook_AddToTribe(AShooterPlayerState* player, FTribeData * MyNewTribe, bool 
 	for (const auto& data : all_players_)
 	{
 		if (data->steam_id == steamId)
+		{
 			data->tribe_id = tribeId;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+		}
 	}
 
 	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
 	for (const auto& data : online_players_)
 	{
 		if (data->steam_id == steamId)
+		{
 			data->tribe_id = tribeId;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+		}
 	}
 	return result;
 }
@@ -460,7 +470,18 @@ uint64 Hook_AShooterGameMode_AddNewTribe(AShooterGameMode * _this, AShooterPlaye
 	for (const auto& data : all_players_)
 	{
 		if (data->steam_id == steamId)
+		{
 			data->tribe_id = result;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+		
+		}
 	}
 
 	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
@@ -468,7 +489,17 @@ uint64 Hook_AShooterGameMode_AddNewTribe(AShooterGameMode * _this, AShooterPlaye
 	for (const auto& data : online_players_)
 	{
 		if (data->steam_id == steamId)
+		{
 			data->tribe_id = result;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+		}
 	}
 
 	return result;
@@ -485,7 +516,17 @@ void Hook_ServerRequestLeaveTribe_Implementation(AShooterPlayerState* player) {
 	for (const auto& data : all_players_)
 	{
 		if (data->steam_id == steamId)
+		{
 			data->tribe_id = tribe_id;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+		}
 	}
 
 	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
@@ -493,7 +534,17 @@ void Hook_ServerRequestLeaveTribe_Implementation(AShooterPlayerState* player) {
 	for (const auto& data : online_players_)
 	{
 		if (data->steam_id == steamId)
+		{
 			data->tribe_id = tribe_id;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+		}
 	}
 }
 
@@ -502,6 +553,14 @@ bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
 	for (const auto& data : all_players_)
 	{
+		Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+		Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+		Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+		Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+		Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+		Log::GetLog()->warn("---------------------------------------------------------------------------------");
+		Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
 		UpdateDB(data);
 	}
 	return result;
@@ -566,6 +625,16 @@ void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
 			startDateTime = alldata->startDateTime;
 			level = alldata->level;
 			isNewPlayer = alldata->isNewPlayer;
+			alldata->level = level;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, alldata->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, alldata->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(alldata->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, alldata->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, alldata->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
 			break;
 		}
 	}
@@ -607,6 +676,16 @@ void NewPlayerProtection::TimerProt::UpdateLevel(std::shared_ptr<OnlinePlayersDa
 		if (alldata->steam_id == data->steam_id)
 		{
 			alldata->level = level;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, alldata->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, alldata->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(alldata->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, alldata->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, alldata->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
+			break;
 		}
 	}
 }
@@ -631,7 +710,17 @@ void NewPlayerProtection::TimerProt::UpdateTribe(std::shared_ptr<OnlinePlayersDa
 	{
 		if (alldata->steam_id == data->steam_id)
 		{
-			alldata->tribe_id = tribe_id;;
+			alldata->tribe_id = tribe_id;
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, alldata->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, alldata->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(alldata->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, alldata->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, alldata->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
+			break;
 		}
 	}
 }
@@ -669,14 +758,27 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 
 	if (diff.count() <= 0)
 	{
-		ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 0, 255), "Player Update Running!!");
+		//ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 0, 255), "Player Update Running!!");
 
 		auto player_interval = std::chrono::minutes(player_update_interval_);
 		NewPlayerProtection::next_player_update = now_time + player_interval;
 
+		Log::GetLog()->warn("(Debug: PlayerTimer) Player Timer Started.");
+		Log::GetLog()->warn("(Debug: PlayerTimer) List of Online Players:");
+
+
 		for (const auto& data : online_players_)
 		{
 			AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
+
+			Log::GetLog()->warn("(Debug: {}) SteamID		: {}", __FUNCTION__, data->steam_id);
+			Log::GetLog()->warn("(Debug: {}) Tribeid		: {}", __FUNCTION__, data->tribe_id);
+			Log::GetLog()->warn("(Debug: {}) Start Date		: {}", __FUNCTION__, NewPlayerProtection::GetTimestamp(data->startDateTime));
+			Log::GetLog()->warn("(Debug: {}) Level			: {}", __FUNCTION__, data->level);
+			Log::GetLog()->warn("(Debug: {}) Is New Player	: {}", __FUNCTION__, data->isNewPlayer);
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+			Log::GetLog()->warn("---------------------------------------------------------------------------------");
+
 
 			NewPlayerProtection::TimerProt::UpdateTribe(data);
 			NewPlayerProtection::TimerProt::UpdateLevel(data);
@@ -688,9 +790,10 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 				//uint64 tribe_id = GetExpiredTribesProtection(steam_id);
 				//DisableTribeProtection(tribe_id);
 			//}*/
+			
+
 		}
 		RemoveExpiredTribesProtection();
-		ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 0, 255), "Player Update Ended!!");
 	}
 
 	/*auto diff2 = std::chrono::duration_cast<std::chrono::seconds>(NewPlayerProtection::next_db_update - now_time);
