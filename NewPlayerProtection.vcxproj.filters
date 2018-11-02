@@ -20,9 +20,6 @@
     <ClInclude Include="NewPlayerProtection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NewPlayerProtectionCommands.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NewPlayerProtectionConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -32,10 +29,16 @@
     <ClInclude Include="NewPlayerProtectionHooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sqlite3.h">
+      <Filter>Header Files\Includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NewPlayerProtection.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlite3.c">
+      <Filter>Header Files\Includes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

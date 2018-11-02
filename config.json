@@ -1,0 +1,11 @@
+{
+  "General": {
+    "DbPathOverride": "",
+    "PlayerUpdateIntervalInMins": 10,
+
+    "NewPlayerProtection": {
+      "NewPlayerMaxLevel": 60,
+      "DaysOfProtection": 3
+    }
+  }
+}

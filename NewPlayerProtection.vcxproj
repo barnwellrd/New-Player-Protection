@@ -193,13 +193,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="NewPlayerProtection.cpp" />
+    <ClCompile Include="sqlite3.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="json.hpp" />
     <ClInclude Include="NewPlayerProtection.h" />
-    <ClInclude Include="NewPlayerProtectionCommands.h" />
     <ClInclude Include="NewPlayerProtectionConfig.h" />
     <ClInclude Include="NewPlayerProtectionHooks.h" />
+    <ClInclude Include="sqlite3.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Lib\ArkApi.lib" />

@@ -1,22 +1,7 @@
+\.vs/
 
-\.vs/NewPlayerProtection/v15/\.suo
+\x64/
 
-*.opendb
+x64/Release/
 
-*.tlog
-
-*.lastbuildstate
-
-*.log
-
-*.iobj
-
-*.ipdb
-
-*.obj
-
-*.pdb
-
-\.vs/NewPlayerProtection/v15/Browse\.VC\.db
-
-*.ipch
+*.dll
