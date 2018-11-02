@@ -7,11 +7,9 @@
  
 namespace NewPlayerProtection
 {
-	bool RequiresAdmin;
 	int PlayerUpdateIntervalInMins;
 	int MaxLevel;
 	int DaysOfProtection;
-	bool AllPlayerStructuresProtected;
 	std::chrono::time_point<std::chrono::system_clock>  next_player_update;
 	std::chrono::time_point<std::chrono::system_clock>  next_db_update;
 

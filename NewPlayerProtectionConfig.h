@@ -1,11 +1,5 @@
 #pragma once
-
 #include <fstream>
-
-constexpr std::chrono::hours operator ""h(unsigned long long h)
-{
-	return std::chrono::hours(h);
-}
 
 std::string NewPlayerProtection::GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime)
 {
@@ -112,11 +106,9 @@ inline void InitConfig()
 	file >> NewPlayerProtection::config;
 	file.close();
 
-	NewPlayerProtection::RequiresAdmin = NewPlayerProtection::config["General"]["RequireAdmin"];
 	NewPlayerProtection::PlayerUpdateIntervalInMins = NewPlayerProtection::config["General"]["PlayerUpdateIntervalInMins"];
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
 	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
-	NewPlayerProtection::AllPlayerStructuresProtected = NewPlayerProtection::config["General"]["NewPlayerProtection"]["PickOnlyOneProtection"]["AllPlayerStructuresProtected"];
 	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
 
 	LoadDB();

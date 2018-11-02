@@ -1,16 +1,11 @@
 {
   "General": {
-      "RequireAdmin": true,
     "DbPathOverride": "",
-    "ProtectionTimerUpdateIntervalInMin": 10,
+    "PlayerUpdateIntervalInMins": 10,
 
     "NewPlayerProtection": {
       "NewPlayerMaxLevel": 60,
-      "DaysOfProtection": 3,
-
-      "PickOnlyOneProtection": {
-        "AllPlayerStructuresProtected": true
-      }
+      "DaysOfProtection": 3
     }
   }
 }

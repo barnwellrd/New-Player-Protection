@@ -20,9 +20,6 @@
     <ClInclude Include="NewPlayerProtection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NewPlayerProtectionCommands.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NewPlayerProtectionConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
