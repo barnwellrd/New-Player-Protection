@@ -30,6 +30,12 @@ void RemoveHooks()
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.SaveWorld", &Hook_AShooterGameMode_SaveWorld);
 }
 
+bool IsAdmin(uint64 steam_id)
+{
+	
+	return Permissions::IsPlayerInGroup(steam_id, "Admins");
+}
+
 bool IsPlayerExists(uint64 steam_id)
 {
 	int exists = 0;
@@ -80,7 +86,7 @@ void RemoveExpiredTribesProtection()
 		//check all players for expired
 		auto diff = std::chrono::duration_cast<std::chrono::seconds>(allData->startDateTime - endTime);
 
-		if (diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel)
+		if ((diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel) && !IsAdmin(allData->steam_id))
 		{
 			allData->isNewPlayer = 0;
 
@@ -91,7 +97,10 @@ void RemoveExpiredTribesProtection()
 			{
 				if (allData->tribe_id == moreAllData->tribe_id)
 				{
-					moreAllData->isNewPlayer = 0;
+					if (!IsAdmin(moreAllData->steam_id))
+					{
+						moreAllData->isNewPlayer = 0;
+					}
 				}
 			}
 
@@ -104,7 +113,10 @@ void RemoveExpiredTribesProtection()
 				}
 				if (allData->tribe_id == onlineData->tribe_id)
 				{
-					onlineData->isNewPlayer = 0;
+					if (!IsAdmin(onlineData->steam_id))
+					{
+						onlineData->isNewPlayer = 0;
+					}
 				}
 			}
 		}

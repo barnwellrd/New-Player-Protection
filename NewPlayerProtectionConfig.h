@@ -1,5 +1,6 @@
 #pragma once
 #include <fstream>
+#include <Permissions.h>
 
 std::string NewPlayerProtection::GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime)
 {
