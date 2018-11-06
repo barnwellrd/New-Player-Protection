@@ -23,7 +23,6 @@ void RemoveHooks()
 
 bool IsAdmin(uint64 steam_id)
 {
-	
 	return Permissions::IsPlayerInGroup(steam_id, "Admins");
 }
 
@@ -44,6 +43,10 @@ bool IsPlayerExists(uint64 steam_id)
 bool IsTribeProtected(uint64 tribeid)
 {
 	int isProtected = 0;
+	if (tribeid < 100000)
+	{
+		return isProtected;
+	}
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
 	for (const auto& data : all_players_)
 	{
@@ -110,7 +113,7 @@ int IsPlayerProtected(APlayerController * PC)
 	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
 	for (const auto& data : online_players_)
 	{
-		if (data->steam_id == steam_id && !IsAdmin(steam_id))
+		if (data->steam_id == steam_id)
 		{
 			return data->isNewPlayer;
 		}
@@ -202,35 +205,58 @@ bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 
 float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FDamageEvent* DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-
-	if (_this) // DamageCauser != NULL
+	if (_this) // APrimalStructure != NULL
 	{
 		uint64 attacked_tribeid = _this->TargetingTeamField();
-		//ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0), "APrimalStructure Name: {}", name.ToString());
-		//Log::GetLog()->warn("APrimalStructure Name: {}", name.ToString());
-		//ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0), "APrimalStructure tribeID: {}", tribeid);
-		//Log::GetLog()->warn("APrimalStructure tribeID: {}", tribeid);
-		if (EventInstigator) // DamageCauser != NULL
+
+		if (DamageCauser) //DamageCauser != NULL
 		{
-			uint64 steam_id = ArkApi::GetApiUtils().GetSteamIdFromController(EventInstigator);
-			AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
+			uint64 attacking_tribeid = DamageCauser->TargetingTeamField();
 
-			auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-
-			for (const auto& data : all_players_)
+			if (EventInstigator) //EventInstigator != NULL
 			{
-				if (data->steam_id == steam_id && data->isNewPlayer == 1 && attacked_tribeid < 100000 && attacked_tribeid != data->tribe_id && !NewPlayerProtection::NewPlayersCanDamageOtherTribesStructures)
-				{
-					ArkApi::GetApiUtils().SendServerMessage(player, FLinearColor(255,0,0),"You are not allowed to damage structures while under New Player Protection!");
-					return 0;
-				}
+				uint64 steam_id = ArkApi::GetApiUtils().GetSteamIdFromController(EventInstigator);
+				AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
 
+				if (IsPlayerProtected(player))
+				{
+					if (!NewPlayerProtection::NewPlayersCanDamageOtherTribesStructures)
+					{
+						if (attacked_tribeid < 100000)
+						{
+							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+
+						}
+						ArkApi::GetApiUtils().SendServerMessage(player, FLinearColor(255, 0, 0), "You are not allowed to damage structures while under New Player Protection!");
+						return 0;
+					}
+				}
+				else
+				{
+					if (IsTribeProtected(attacked_tribeid))
+					{
+						ArkApi::GetApiUtils().SendServerMessage(player, FLinearColor(255, 0, 0), "You are not allowed to damage a tribe's structures while they are under New Player Protection!");
+						return 0;
+					}
+				}
+			}
+			else //EventInstigator == NULL
+			{
 				if (IsTribeProtected(attacked_tribeid))
 				{
-					AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
-					ArkApi::GetApiUtils().SendServerMessage(player, FLinearColor(255, 0, 0), "You are not allowed to damage a tribe's structures while they are under New Player Protection!");
 					return 0;
 				}
+				if (IsTribeProtected(attacking_tribeid) && !NewPlayerProtection::NewPlayersCanDamageOtherTribesStructures)
+				{
+					return 0;
+				}
+			}
+		}
+		else //DamageCauser == NULL
+		{
+			if (IsTribeProtected(attacked_tribeid))
+			{
+				return 0;
 			}
 		}
 	}	

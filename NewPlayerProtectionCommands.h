@@ -29,7 +29,6 @@ inline void ResetStructures(APlayerController* player, FString* message, bool bo
 			*/
 			TArray<AActor*> AllStructures;
 			UGameplayStatics::GetAllActorsOfClass(reinterpret_cast<UObject*>(ArkApi::GetApiUtils().GetWorld()), APrimalStructure::GetPrivateStaticClass(), &AllStructures);
-			APrimalStructure* Struc;
 
 			for (AActor* StructActor : AllStructures)
 			{
