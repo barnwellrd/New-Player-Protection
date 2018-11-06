@@ -205,9 +205,7 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 
 	if (_this) // DamageCauser != NULL
 	{
-		//FString name;
 		uint64 attacked_tribeid = _this->TargetingTeamField();
-		//_this->GetHumanReadableName(&name);
 		//ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0), "APrimalStructure Name: {}", name.ToString());
 		//Log::GetLog()->warn("APrimalStructure Name: {}", name.ToString());
 		//ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0), "APrimalStructure tribeID: {}", tribeid);
