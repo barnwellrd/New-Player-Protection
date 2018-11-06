@@ -1,5 +1,6 @@
 #pragma once
 #include <fstream>
+#include <Permissions.h>
 
 std::string NewPlayerProtection::GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime)
 {
@@ -107,6 +108,7 @@ inline void InitConfig()
 	file.close();
 
 	NewPlayerProtection::PlayerUpdateIntervalInMins = NewPlayerProtection::config["General"]["PlayerUpdateIntervalInMins"];
+	NewPlayerProtection::NewPlayersCanDamageOtherTribesStructures = NewPlayerProtection::config["General"]["NewPlayersCanDamageOtherTribesStructures"];
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
 	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
 	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();

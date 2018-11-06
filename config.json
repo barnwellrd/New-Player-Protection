@@ -1,7 +1,8 @@
 {
   "General": {
     "DbPathOverride": "",
-    "PlayerUpdateIntervalInMins": 10,
+    "PlayerUpdateIntervalInMins": 1,
+    "NewPlayersCanDamageOtherTribesStructures": false,
 
     "NewPlayerProtection": {
       "NewPlayerMaxLevel": 60,
