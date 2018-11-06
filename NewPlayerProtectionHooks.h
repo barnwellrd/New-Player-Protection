@@ -1,33 +1,24 @@
 #pragma once
 
-DECLARE_HOOK(APrimalStructure_FinalStructurePlacement, bool, APrimalStructure*, APlayerController*, FVector, FRotator, FRotator, APawn *, FName, bool);
 DECLARE_HOOK(AShooterGameMode_HandleNewPlayer, bool, AShooterGameMode*, AShooterPlayerController*, UPrimalPlayerData*, AShooterCharacter*, bool);
 DECLARE_HOOK(AShooterGameMode_Logout, void, AShooterGameMode*, AController*);
-DECLARE_HOOK(AShooterGameMode_AddNewTribe, uint64, AShooterGameMode *, AShooterPlayerState * PlayerOwner, FString * TribeName, FTribeGovernment * TribeGovernment);
-DECLARE_HOOK(AddToTribe, bool, AShooterPlayerState*, FTribeData * MyNewTribe, bool bMergeTribe, bool bForce, bool bIsFromInvite, APlayerController * InviterPC);
-DECLARE_HOOK(ServerRequestLeaveTribe_Implementation, void, AShooterPlayerState*);
 DECLARE_HOOK(AShooterGameMode_SaveWorld, bool, AShooterGameMode*);
+DECLARE_HOOK(APrimalStructure_TakeDamage, float, APrimalStructure*, float, FDamageEvent*, AController*, AActor*);
 
 void InitHooks()
 {
-	ArkApi::GetHooks().SetHook("APrimalStructure.FinalStructurePlacement", &Hook_APrimalStructure_FinalStructurePlacement, reinterpret_cast<LPVOID*>(&APrimalStructure_FinalStructurePlacement_original));
 	ArkApi::GetHooks().SetHook("AShooterGameMode.HandleNewPlayer_Implementation", &Hook_AShooterGameMode_HandleNewPlayer, &AShooterGameMode_HandleNewPlayer_original);
 	ArkApi::GetHooks().SetHook("AShooterGameMode.Logout", &Hook_AShooterGameMode_Logout, &AShooterGameMode_Logout_original);
-	ArkApi::GetHooks().SetHook("AShooterGameMode.AddNewTribe", &Hook_AShooterGameMode_AddNewTribe, &AShooterGameMode_AddNewTribe_original);
-	ArkApi::GetHooks().SetHook("AShooterPlayerState.AddToTribe", &Hook_AddToTribe, &AddToTribe_original);
-	ArkApi::GetHooks().SetHook("AShooterPlayerState.ServerRequestLeaveTribe_Implementation", &Hook_ServerRequestLeaveTribe_Implementation, &ServerRequestLeaveTribe_Implementation_original);
 	ArkApi::GetHooks().SetHook("AShooterGameMode.SaveWorld", &Hook_AShooterGameMode_SaveWorld, &AShooterGameMode_SaveWorld_original);
+	ArkApi::GetHooks().SetHook("APrimalStructure.TakeDamage", &Hook_APrimalStructure_TakeDamage, &APrimalStructure_TakeDamage_original);
 }
 
 void RemoveHooks()
 {
-	ArkApi::GetHooks().DisableHook("APrimalStructure.FinalStructurePlacement", &Hook_APrimalStructure_FinalStructurePlacement);
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.HandleNewPlayer_Implementation", &Hook_AShooterGameMode_HandleNewPlayer);
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.Logout", &Hook_AShooterGameMode_Logout);
-	ArkApi::GetHooks().DisableHook("AShooterGameMode.AddNewTribe", &Hook_AShooterGameMode_AddNewTribe);
-	ArkApi::GetHooks().DisableHook("AShooterPlayerState.AddToTribe", &Hook_AddToTribe);
-	ArkApi::GetHooks().DisableHook("AShooterPlayerState.ServerRequestLeaveTribe_Implementation", &Hook_ServerRequestLeaveTribe_Implementation);
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.SaveWorld", &Hook_AShooterGameMode_SaveWorld);
+	ArkApi::GetHooks().DisableHook("APrimalStructure.TakeDamage", &Hook_APrimalStructure_TakeDamage);
 }
 
 bool IsAdmin(uint64 steam_id)
@@ -50,27 +41,18 @@ bool IsPlayerExists(uint64 steam_id)
 	return exists;
 }
 
-void DisableTribeProtection(uint64 tribe_id)
+bool IsTribeProtected(uint64 tribeid)
 {
-	const uint64 team_id = tribe_id;
-
-	//brief Finds all Structures owned by team
-	TArray<AActor*> AllStructures;
-	UGameplayStatics::GetAllActorsOfClass(reinterpret_cast<UObject*>(ArkApi::GetApiUtils().GetWorld()), APrimalStructure::GetPrivateStaticClass(), &AllStructures);
-	TArray<APrimalStructure*> FoundStructures;
-	APrimalStructure* Struc;
-
-	for (AActor* StructActor : AllStructures)
+	int isProtected = 0;
+	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+	for (const auto& data : all_players_)
 	{
-		if (!StructActor || (uint64)StructActor->TargetingTeamField() != team_id) continue;
-		Struc = static_cast<APrimalStructure*>(StructActor);
-		FoundStructures.Add(Struc);
+		if (data->tribe_id == tribeid && data->isNewPlayer == 1)
+		{
+			return 1;
+		}
 	}
-
-	for (APrimalStructure* st : FoundStructures)
-	{
-		st->bCanBeDamaged() = true;;
-	}
+	return isProtected;
 }
 
 void RemoveExpiredTribesProtection()
@@ -89,8 +71,6 @@ void RemoveExpiredTribesProtection()
 		if ((diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel) && !IsAdmin(allData->steam_id))
 		{
 			allData->isNewPlayer = 0;
-
-			DisableTribeProtection(allData->tribe_id);
 
 			//update all_players protection with same tribe id
 			for (const auto& moreAllData : all_players_)
@@ -130,7 +110,7 @@ int IsPlayerProtected(APlayerController * PC)
 	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
 	for (const auto& data : online_players_)
 	{
-		if (data->steam_id == steam_id)
+		if (data->steam_id == steam_id && !IsAdmin(steam_id))
 		{
 			return data->isNewPlayer;
 		}
@@ -146,7 +126,7 @@ uint64 GetMaxUnknownTribeId()
 
 	for (const auto& data : all_players_)
 	{
-		if (data->tribe_id < 999999)
+		if (data->tribe_id < 99999)
 		{
 			if (tribeid < data->tribe_id)
 				tribeid = data->tribe_id;
@@ -169,15 +149,6 @@ void UpdateDB(std::shared_ptr<NewPlayerProtection::TimerProt::AllPlayerData> dat
 	{
 		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 	}
-}
-
-bool _cdecl Hook_APrimalStructure_FinalStructurePlacement(APrimalStructure* _this, APlayerController * PC, FVector AtLocation, FRotator AtRotation, FRotator PlayerViewRotation, APawn * AttachToPawn, FName BoneName, bool bIsFlipped)
-{
-	if (IsPlayerProtected(PC))
-	{
-		_this->bCanBeDamaged() = false;
-	}
-	return APrimalStructure_FinalStructurePlacement_original(_this, PC, AtLocation, AtRotation, PlayerViewRotation, AttachToPawn, BoneName, bIsFlipped);
 }
 
 bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlayerController* new_player, UPrimalPlayerData* player_data, AShooterCharacter* player_character, bool is_from_login)
@@ -219,94 +190,6 @@ void Hook_AShooterGameMode_Logout(AShooterGameMode* _this, AController* exiting)
 	AShooterGameMode_Logout_original(_this, exiting);
 }
 
-bool Hook_AddToTribe(AShooterPlayerState* player, FTribeData * MyNewTribe, bool bMergeTribe, bool bForce, bool bIsFromInvite, APlayerController * InviterPC) {
-	bool result = AddToTribe_original(player, MyNewTribe, bMergeTribe, bForce, bIsFromInvite, InviterPC);		
-	uint64 tribeId = MyNewTribe->TribeIDField();
-	uint64 steamId = ArkApi::GetApiUtils().GetSteamIdFromController(player->GetOwnerController());
-
-	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-	for (const auto& data : all_players_)
-	{
-		if (data->steam_id == steamId)
-		{
-			data->tribe_id = tribeId;
-			break;
-		}
-	}
-
-	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
-	for (const auto& data : online_players_)
-	{
-		if (data->steam_id == steamId)
-		{
-			data->tribe_id = tribeId;
-			break;
-		}
-	}
-	return result;
-}
-
-uint64 Hook_AShooterGameMode_AddNewTribe(AShooterGameMode * _this, AShooterPlayerState * PlayerOwner, FString * TribeName, FTribeGovernment * TribeGovernment) {
-	auto result = AShooterGameMode_AddNewTribe_original(_this, PlayerOwner, TribeName, TribeGovernment);
-
-	uint64 steamId = ArkApi::GetApiUtils().GetSteamIdFromController(PlayerOwner->GetOwnerController());
-	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-
-	for (const auto& data : all_players_)
-	{
-		if (data->steam_id == steamId)
-		{
-			data->tribe_id = result;
-			break;
-		}
-	}
-
-	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
-
-	for (const auto& data : online_players_)
-	{
-		if (data->steam_id == steamId)
-		{
-			data->tribe_id = result;
-			break;
-		}
-	}
-	return result;
-}
-
-void Hook_ServerRequestLeaveTribe_Implementation(AShooterPlayerState* player) {
-	ServerRequestLeaveTribe_Implementation_original(player);
-
-	uint64 steamId = ArkApi::GetApiUtils().GetSteamIdFromController(player->GetOwnerController());
-
-	uint64 tribe_id = player->TargetingTeamField();
-
-	if(tribe_id == 0)
-		tribe_id = GetMaxUnknownTribeId();
-
-	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-
-	for (const auto& data : all_players_)
-	{
-		if (data->steam_id == steamId)
-		{
-			data->tribe_id = tribe_id;
-			break;
-		}
-	}
-
-	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
-
-	for (const auto& data : online_players_)
-	{
-		if (data->steam_id == steamId)
-		{
-			data->tribe_id = tribe_id;
-			break;
-		}
-	}
-}
-
 bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 	bool result = AShooterGameMode_SaveWorld_original(GameMode);
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
@@ -315,6 +198,45 @@ bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 		UpdateDB(data);
 	}
 	return result;
+}
+
+float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FDamageEvent* DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+
+	if (_this) // DamageCauser != NULL
+	{
+		//FString name;
+		uint64 attacked_tribeid = _this->TargetingTeamField();
+		//_this->GetHumanReadableName(&name);
+		//ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0), "APrimalStructure Name: {}", name.ToString());
+		//Log::GetLog()->warn("APrimalStructure Name: {}", name.ToString());
+		//ArkApi::GetApiUtils().SendServerMessageToAll(FLinearColor(0, 255, 0), "APrimalStructure tribeID: {}", tribeid);
+		//Log::GetLog()->warn("APrimalStructure tribeID: {}", tribeid);
+		if (EventInstigator) // DamageCauser != NULL
+		{
+			uint64 steam_id = ArkApi::GetApiUtils().GetSteamIdFromController(EventInstigator);
+			AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
+
+			auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+
+			for (const auto& data : all_players_)
+			{
+				if (data->steam_id == steam_id && data->isNewPlayer == 1 && attacked_tribeid < 100000 && attacked_tribeid != data->tribe_id && !NewPlayerProtection::NewPlayersCanDamageOtherTribesStructures)
+				{
+					ArkApi::GetApiUtils().SendServerMessage(player, FLinearColor(255,0,0),"You are not allowed to damage structures while under New Player Protection!");
+					return 0;
+				}
+
+				if (IsTribeProtected(attacked_tribeid))
+				{
+					AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
+					ArkApi::GetApiUtils().SendServerMessage(player, FLinearColor(255, 0, 0), "You are not allowed to damage a tribe's structures while they are under New Player Protection!");
+					return 0;
+				}
+			}
+		}
+	}	
+	return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 }
 
 NewPlayerProtection::TimerProt::TimerProt()
@@ -468,7 +390,6 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 		for (const auto& data : online_players_)
 		{
 			AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
-
 			NewPlayerProtection::TimerProt::UpdateTribe(data);
 			NewPlayerProtection::TimerProt::UpdateLevel(data);
 		}

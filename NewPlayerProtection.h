@@ -8,6 +8,7 @@
 namespace NewPlayerProtection
 {
 	int PlayerUpdateIntervalInMins;
+	bool NewPlayersCanDamageOtherTribesStructures;
 	int MaxLevel;
 	int DaysOfProtection;
 	std::chrono::time_point<std::chrono::system_clock>  next_player_update;
