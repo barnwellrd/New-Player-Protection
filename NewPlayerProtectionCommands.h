@@ -3,16 +3,10 @@
 inline void ResetStructures(APlayerController* player, FString* message, bool boolean)
 {
 	AShooterPlayerController* shooter_controller = static_cast<AShooterPlayerController*>(player);
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin()())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
 
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
-	if (!IsAdmin(steam_id))
-	{
-		ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(255, 0, 0),
-			"You don't have permissions to use this command");
-		return;
-	}
 
 	/**
 	* \brief Finds all Structures owned by team
@@ -24,10 +18,11 @@ inline void ResetStructures(APlayerController* player, FString* message, bool bo
 	{
 		if (!StructActor) continue;
 		StructActor = static_cast<APrimalStructure*>(StructActor);
-		StructActor->bCanBeDamaged() = true;
+		APrimalStructure* defaultstruc = static_cast<APrimalStructure*>(StructActor->ClassField()->GetDefaultObject(true));
+		StructActor->bCanBeDamaged() = defaultstruc->bCanBeDamaged().Get();
 	}
 
-	ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(0, 255, 0), "{} updated all tribe structures to default!",
+	ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(0, 255, 0), "{} updated all structures to default!",
 		shooter_controller->GetPlayerCharacter()->PlayerNameField().ToString().c_str());
 }
 
