@@ -2,6 +2,7 @@
 #include "NewPlayerProtection.h"
 #include "NewPlayerProtectionConfig.h"
 #include "NewPlayerProtectionHooks.h"
+#include "NewPlayerProtectionCommands.h"
 
 #pragma comment(lib, "ArkApi.lib")
 
@@ -11,6 +12,7 @@ void Init()
 
 	InitConfig();
 	InitHooks();
+	InitCommands();
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
@@ -22,6 +24,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		break;
 	case DLL_PROCESS_DETACH:
 		RemoveHooks();
+		RemoveCommands();
 		break;
 	}
 	return TRUE;
