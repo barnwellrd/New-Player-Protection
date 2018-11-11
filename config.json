@@ -2,7 +2,30 @@
   "General": {
     "DbPathOverride": "",
     "PlayerUpdateIntervalInMins": 1,
-    "NewPlayersCanDamageOtherTribesStructures": false,
+    "AllowNewPlayersToDamageEnemyStructures": false,
+    "AllowPlayersToDisableOwnedTribeProtection": true,
+    "NewPlayerDoingDamageMessage": "You can't attack structures while under New Player Protection!",
+    "NewPlayerStructureTakingDamageMessage": "You can't attack structures that are under New Player Protection!",
+    "NewPlayerProtectionDisableSuccess": "Your tribes protection has been disabled!",
+    "NotANewPlayerMessage": "You're tribe is not under New Player Protection!",
+    "NotTribeAdminMessage": "You are not a tribe admin!",
+    "NPPRemainingMessage": "New Player Protection Remaining: {} Day(s) {} Minute(s) OR {} level(s)! [Based on oldest/highest tribe member]",
+    "AdminNoTribeExistsMessage": "No tribe with Tribe ID {} exists!",
+    "AdminTribeProtectionRemoved": "Protection for Tribe: {} has been removed!",
+    "AdminTribeNotUnderProtection": "Tribe {} has no protection to remove!",
+    "AdminResetTribeProtectionSuccess": "Tribe {} has been given {} day(s) of protection from now!",
+    "AdminResetTribeProtectionLvlFailure": "Tribe {} has a player over the NPP Max Level. Cannot give protection!",
+    "NPPInfoMessage": "NPP Server Settings: Days of Protection: {}, Max New Player Level: {}.",
+
+    "MessageIntervalInSecs": 10,
+    "MessageTextSize": 1.0,
+    "MessageDisplayDelay": 10,
+    "MessageColor": [
+      0.0,
+      0.8,
+      0.8,
+      1.0
+    ],
 
     "NewPlayerProtection": {
       "NewPlayerMaxLevel": 60,
