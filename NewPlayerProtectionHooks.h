@@ -50,7 +50,7 @@ bool IsTribeProtected(uint64 tribeid)
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
 	for (const auto& data : all_players_)
 	{
-		if (data->tribe_id == tribeid && data->isNewPlayer == 1)
+		if (data->tribe_id == tribeid && data->isNewPlayer == 1 && !IsAdmin(data->steam_id))
 		{
 			return 1;
 		}
@@ -71,32 +71,49 @@ void RemoveExpiredTribesProtection()
 		//check all players for expired
 		auto diff = std::chrono::duration_cast<std::chrono::seconds>(allData->startDateTime - endTime);
 
-		if ((diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel) && !IsAdmin(allData->steam_id))
+		if ((diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel))
 		{
 			allData->isNewPlayer = 0;
-
-			//update all_players protection with same tribe id
-			for (const auto& moreAllData : all_players_)
+			//if not an admin
+			if (!IsAdmin(allData->steam_id))
 			{
-				if (allData->tribe_id == moreAllData->tribe_id)
+				//update all_players protection with same tribe id
+				for (const auto& moreAllData : all_players_)
 				{
-					if (!IsAdmin(moreAllData->steam_id))
+					if (allData->tribe_id == moreAllData->tribe_id)
 					{
-						moreAllData->isNewPlayer = 0;
+						if (IsAdmin(moreAllData->steam_id))
+						{
+							continue;
+						}
+						else
+						{
+							moreAllData->isNewPlayer = 0;
+						}
+					}
+				}
+
+				//update online players with same steam id and tribe id
+				for (const auto& onlineData : online_players_)
+				{
+					if (allData->steam_id == onlineData->steam_id)
+					{
+						onlineData->isNewPlayer = 0;
+					}
+					if (allData->tribe_id == onlineData->tribe_id)
+					{
+						if (!IsAdmin(onlineData->steam_id))
+						{
+							onlineData->isNewPlayer = 0;
+						}
 					}
 				}
 			}
-
-			//update online players with same steam id and tribe id
-			for (const auto& onlineData : online_players_)
+			else	//is admin, turn admin prot off
 			{
-				if (allData->steam_id == onlineData->steam_id)
+				for (const auto& onlineData : online_players_)
 				{
-					onlineData->isNewPlayer = 0;
-				}
-				if (allData->tribe_id == onlineData->tribe_id)
-				{
-					if (!IsAdmin(onlineData->steam_id))
+					if (allData->steam_id == onlineData->steam_id)
 					{
 						onlineData->isNewPlayer = 0;
 					}
@@ -220,14 +237,16 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 
 				if (IsPlayerProtected(player))
 				{
-					if (!NewPlayerProtection::NewPlayersCanDamageOtherTribesStructures)
+					if (!NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures)
 					{
-						if (attacked_tribeid < 100000)
+						if (attacked_tribeid < 100000 || attacked_tribeid == attacking_tribeid)
 						{
 							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
-
 						}
-						ArkApi::GetApiUtils().SendServerMessage(player, FLinearColor(255, 0, 0), "You are not allowed to damage structures while under New Player Protection!");
+						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
+						{
+							ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerDoingDamageMessage);
+						}
 						return 0;
 					}
 				}
@@ -235,18 +254,25 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 				{
 					if (IsTribeProtected(attacked_tribeid))
 					{
-						ArkApi::GetApiUtils().SendServerMessage(player, FLinearColor(255, 0, 0), "You are not allowed to damage a tribe's structures while they are under New Player Protection!");
+						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
+						{
+							ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageMessage);
+						}
 						return 0;
 					}
 				}
 			}
 			else //EventInstigator == NULL
 			{
+				if (attacked_tribeid == attacking_tribeid)
+				{
+					return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+				}
 				if (IsTribeProtected(attacked_tribeid))
 				{
 					return 0;
 				}
-				if (IsTribeProtected(attacking_tribeid) && !NewPlayerProtection::NewPlayersCanDamageOtherTribesStructures)
+				if (IsTribeProtected(attacking_tribeid) && !NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures)
 				{
 					return 0;
 				}
@@ -275,7 +301,7 @@ NewPlayerProtection::TimerProt& NewPlayerProtection::TimerProt::Get()
 	return instance;
 }
 
-void NewPlayerProtection::TimerProt::AddPlayer(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level, int isNewPlayer)
+void NewPlayerProtection::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level, int isNewPlayer)
 {
 	const auto iter = std::find_if(
 		all_players_.begin(), all_players_.end(),
@@ -295,8 +321,8 @@ void NewPlayerProtection::TimerProt::AddNewPlayer(uint64 steam_id, uint64 tribe_
 
 	if (iter != all_players_.end())
 		return;
-
-	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, std::chrono::system_clock::now(), 1, 1));
+	bool isNewPlayer = IsAdmin(steam_id);
+	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, std::chrono::system_clock::now(), 1, isNewPlayer));
 }
 
 void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
@@ -312,6 +338,7 @@ void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
 	std::chrono::time_point<std::chrono::system_clock> startDateTime;
 	int level;
 	int isNewPlayer;
+	std::chrono::time_point<std::chrono::system_clock> nextMessageTime = std::chrono::system_clock::now();
 
 	for (const auto& alldata : all_players_)
 	{
@@ -326,7 +353,7 @@ void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
 		}
 	}
 
-	online_players_.push_back(std::make_shared<OnlinePlayersData>(steam_id, tribeid, startDateTime, level, isNewPlayer));
+	online_players_.push_back(std::make_shared<OnlinePlayersData>(steam_id, tribeid, startDateTime, level, isNewPlayer, nextMessageTime));
 }
 
 void NewPlayerProtection::TimerProt::RemovePlayer(uint64 steam_id)
@@ -339,6 +366,29 @@ void NewPlayerProtection::TimerProt::RemovePlayer(uint64 steam_id)
 	{
 		online_players_.erase(std::remove(online_players_.begin(), online_players_.end(), *iter), online_players_.end());
 	}
+}
+
+bool NewPlayerProtection::TimerProt::IsNextMessageReady(uint64 steam_id)
+{
+	for (const auto& data : online_players_)
+	{
+		if (data->steam_id == steam_id)
+		{
+			const auto now_time = std::chrono::system_clock::now();
+			auto diff = std::chrono::duration_cast<std::chrono::seconds>(data->nextMessageTime - now_time);
+
+			if (diff.count() <= 0)
+			{
+				data->nextMessageTime = now_time + std::chrono::seconds(NewPlayerProtection::MessageIntervalInSecs);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 void NewPlayerProtection::TimerProt::UpdateLevel(std::shared_ptr<OnlinePlayersData> data)

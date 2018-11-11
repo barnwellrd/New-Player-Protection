@@ -85,7 +85,7 @@ try
 
 		res >> [](uint64 steamid, uint64 tribeid, std::string startdate, int level, int isnewplayer)
 		{
-			NewPlayerProtection::TimerProt::Get().AddPlayer(steamid, tribeid, NewPlayerProtection::GetDateTime(startdate), level, isnewplayer);
+			NewPlayerProtection::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NewPlayerProtection::GetDateTime(startdate), level, isnewplayer);
 		};
 
 	}
@@ -108,10 +108,28 @@ inline void InitConfig()
 	file.close();
 
 	NewPlayerProtection::PlayerUpdateIntervalInMins = NewPlayerProtection::config["General"]["PlayerUpdateIntervalInMins"];
-	NewPlayerProtection::NewPlayersCanDamageOtherTribesStructures = NewPlayerProtection::config["General"]["NewPlayersCanDamageOtherTribesStructures"];
+	NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures = NewPlayerProtection::config["General"]["AllowNewPlayersToDamageEnemyStructures"];
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
 	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
 	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
+	NewPlayerProtection::AllowPlayersToDisableOwnedTribeProtection = NewPlayerProtection::config["General"]["AllowPlayersToDisableOwnedTribeProtection"];
+	NewPlayerProtection::NewPlayerDoingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerDoingDamageMessage"]).c_str());
+	NewPlayerProtection::NewPlayerStructureTakingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageMessage"]).c_str());
+	NewPlayerProtection::NewPlayerProtectionDisableSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerProtectionDisableSuccess"]).c_str());
+	NewPlayerProtection::NotANewPlayerMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotANewPlayerMessage"]).c_str());
+	NewPlayerProtection::NotTribeAdminMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotTribeAdminMessage"]).c_str());
+	NewPlayerProtection::NPPRemainingMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPRemainingMessage"]).c_str());
+	NewPlayerProtection::AdminNoTribeExistsMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminNoTribeExistsMessage"]).c_str());
+	NewPlayerProtection::AdminTribeProtectionRemoved = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminTribeProtectionRemoved"]).c_str());
+	NewPlayerProtection::AdminTribeNotUnderProtection = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminTribeNotUnderProtection"]).c_str());
+	NewPlayerProtection::AdminResetTribeProtectionSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminResetTribeProtectionSuccess"]).c_str());
+	NewPlayerProtection::AdminResetTribeProtectionLvlFailure = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminResetTribeProtectionLvlFailure"]).c_str());
+	NewPlayerProtection::NPPInfoMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPInfoMessage"]).c_str());
+	NewPlayerProtection::MessageIntervalInSecs = NewPlayerProtection::config["General"]["MessageIntervalInSecs"];
+	NewPlayerProtection::MessageTextSize = NewPlayerProtection::config["General"]["MessageTextSize"];
+	NewPlayerProtection::MessageDisplayDelay = NewPlayerProtection::config["General"]["MessageDisplayDelay"];
+	NewPlayerProtection::TempConfig = NewPlayerProtection::config["General"]["MessageColor"];
+	NewPlayerProtection::MessageColor = FLinearColor(NewPlayerProtection::TempConfig[0], NewPlayerProtection::TempConfig[1], NewPlayerProtection::TempConfig[2], NewPlayerProtection::TempConfig[3]);
 
 	LoadDB();
 	LoadDataBase();

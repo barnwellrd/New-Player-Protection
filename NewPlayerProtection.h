@@ -8,13 +8,30 @@
 namespace NewPlayerProtection
 {
 	int PlayerUpdateIntervalInMins;
-	bool NewPlayersCanDamageOtherTribesStructures;
+	bool AllowNewPlayersToDamageEnemyStructures;
+	bool AllowPlayersToDisableOwnedTribeProtection;
+	FString NewPlayerDoingDamageMessage;
+	FString NewPlayerStructureTakingDamageMessage;
+	FString NewPlayerProtectionDisableSuccess;
+	FString NotANewPlayerMessage;
+	FString NotTribeAdminMessage;
+	FString NPPRemainingMessage;
+	FString AdminNoTribeExistsMessage;
+	FString AdminTribeProtectionRemoved;
+	FString AdminTribeNotUnderProtection;
+	FString AdminResetTribeProtectionSuccess;
+	FString AdminResetTribeProtectionLvlFailure;
+	FString NPPInfoMessage;
+	int MessageIntervalInSecs;
+	float MessageTextSize;
+	float MessageDisplayDelay;
+	FLinearColor  MessageColor;
 	int MaxLevel;
 	int DaysOfProtection;
 	std::chrono::time_point<std::chrono::system_clock>  next_player_update;
 	std::chrono::time_point<std::chrono::system_clock>  next_db_update;
 
-	nlohmann::json config;
+	nlohmann::json config, TempConfig;
 	sqlite::database& GetDB();
 
 	std::string GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime);
@@ -33,15 +50,17 @@ namespace NewPlayerProtection
 			struct OnlinePlayersData
 			{
 				OnlinePlayersData(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level,
-					int isNewPlayer)
+					int isNewPlayer, std::chrono::time_point<std::chrono::system_clock> nextMessageTime)
 					:
-					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), level(level), isNewPlayer(isNewPlayer)
+					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), level(level), isNewPlayer(isNewPlayer), nextMessageTime(nextMessageTime)
 				{}
 				uint64 steam_id;
 				uint64 tribe_id;
 				std::chrono::time_point<std::chrono::system_clock> startDateTime;
 				int level;
 				int isNewPlayer;
+				std::chrono::time_point<std::chrono::system_clock> nextMessageTime;
+
 			};
 
 			struct AllPlayerData
@@ -71,8 +90,9 @@ namespace NewPlayerProtection
 
 			void AddOnlinePlayer(uint64 steam_id);
 			void AddNewPlayer(uint64 steam_id, uint64 tribe_id);
-			void AddPlayer(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level, int isNewPlayer);
+			void AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level, int isNewPlayer);
 			void RemovePlayer(uint64 steam_id);
+			bool IsNextMessageReady(uint64 steam_id);
 
 			void UpdateLevel(std::shared_ptr <OnlinePlayersData> data);
 			void UpdateTribe(std::shared_ptr <OnlinePlayersData> data);
