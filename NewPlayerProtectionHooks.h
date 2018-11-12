@@ -234,6 +234,11 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 			{
 				uint64 steam_id = ArkApi::GetApiUtils().GetSteamIdFromController(EventInstigator);
 				AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
+				
+				if (IsAdmin(steam_id))
+				{
+					return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+				}
 
 				if (IsPlayerProtected(player))
 				{
@@ -321,7 +326,7 @@ void NewPlayerProtection::TimerProt::AddNewPlayer(uint64 steam_id, uint64 tribe_
 
 	if (iter != all_players_.end())
 		return;
-	bool isNewPlayer = IsAdmin(steam_id);
+	bool isNewPlayer = !IsAdmin(steam_id);
 	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, std::chrono::system_clock::now(), 1, isNewPlayer));
 }
 

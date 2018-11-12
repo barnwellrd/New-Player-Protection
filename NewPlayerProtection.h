@@ -10,8 +10,10 @@ namespace NewPlayerProtection
 	int PlayerUpdateIntervalInMins;
 	bool AllowNewPlayersToDamageEnemyStructures;
 	bool AllowPlayersToDisableOwnedTribeProtection;
+	FString NPPCommandPrefix;
 	FString NewPlayerDoingDamageMessage;
 	FString NewPlayerStructureTakingDamageMessage;
+	FString NPPInvalidCommand;
 	FString NewPlayerProtectionDisableSuccess;
 	FString NotANewPlayerMessage;
 	FString NotTribeAdminMessage;
