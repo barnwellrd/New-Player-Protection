@@ -475,5 +475,3 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 		RemoveExpiredTribesProtection();
 	}
 }
-
-
