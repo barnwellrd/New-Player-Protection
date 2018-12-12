@@ -60,7 +60,7 @@ bool IsTribeProtected(uint64 tribeid)
 
 void RemoveExpiredTribesProtection()
 {
-	auto protectionDaysInHours = std::chrono::hours(24  * NewPlayerProtection::DaysOfProtection);
+	auto protectionDaysInHours = std::chrono::hours(NewPlayerProtection::HoursOfProtection);
 	auto now = std::chrono::system_clock::now();
 	auto endTime = now - protectionDaysInHours;
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
@@ -71,7 +71,7 @@ void RemoveExpiredTribesProtection()
 		//check all players for expired
 		auto diff = std::chrono::duration_cast<std::chrono::seconds>(allData->startDateTime - endTime);
 
-		if ((diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel))
+		if ((diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel || allData->isNewPlayer == 0))
 		{
 			allData->isNewPlayer = 0;
 			//if not an admin
@@ -275,6 +275,22 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 				}
 				if (IsTribeProtected(attacked_tribeid))
 				{
+					auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
+
+					for (const auto& onlineData : online_players_)
+					{
+						if (onlineData->tribe_id == attacking_tribeid)
+						{
+							if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(onlineData->steam_id))
+							{
+								auto tribe_player = ArkApi::GetApiUtils().FindPlayerFromSteamId(onlineData->steam_id);
+								if (!ArkApi::GetApiUtils().IsPlayerDead(tribe_player))
+								{
+									ArkApi::GetApiUtils().SendNotification(tribe_player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageFromUnknownTribemateMessage);
+								}
+							}
+						}
+					}
 					return 0;
 				}
 				if (IsTribeProtected(attacking_tribeid) && !NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures)

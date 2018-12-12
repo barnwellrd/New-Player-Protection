@@ -13,6 +13,7 @@ namespace NewPlayerProtection
 	FString NPPCommandPrefix;
 	FString NewPlayerDoingDamageMessage;
 	FString NewPlayerStructureTakingDamageMessage;
+	FString NewPlayerStructureTakingDamageFromUnknownTribemateMessage;
 	FString NPPInvalidCommand;
 	FString NewPlayerProtectionDisableSuccess;
 	FString NotANewPlayerMessage;
@@ -29,7 +30,7 @@ namespace NewPlayerProtection
 	float MessageDisplayDelay;
 	FLinearColor  MessageColor;
 	int MaxLevel;
-	int DaysOfProtection;
+	int HoursOfProtection;
 	std::chrono::time_point<std::chrono::system_clock>  next_player_update;
 	std::chrono::time_point<std::chrono::system_clock>  next_db_update;
 

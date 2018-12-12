@@ -22,14 +22,13 @@ inline void ResetStructures(APlayerController* player_controller, FString*, bool
 		StructActor->bCanBeDamaged() = defaultstruc->bCanBeDamaged().Get();
 	}
 
-	ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(0, 255, 0), "{} updated all structures to default!",
-		shooter_controller->GetPlayerCharacter()->PlayerNameField().ToString().c_str());
+	ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(0, 255, 0), "Updated all structures to default!");
 }
 
 inline void Info(AShooterPlayerController* player, FString* message, int mode)
 {
 	ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-		*NewPlayerProtection::NPPInfoMessage, NewPlayerProtection::DaysOfProtection, NewPlayerProtection::MaxLevel);
+		*NewPlayerProtection::NPPInfoMessage, NewPlayerProtection::HoursOfProtection, NewPlayerProtection::MaxLevel);
 }
 
 inline void Disable(AShooterPlayerController* player, FString* message, int mode)
@@ -127,7 +126,7 @@ inline void Status(AShooterPlayerController* player, FString* message, int mode)
 		}
 
 		//calulate time
-		auto protectionDaysInHours = std::chrono::hours(24 * NewPlayerProtection::DaysOfProtection);
+		auto protectionDaysInHours = std::chrono::hours(NewPlayerProtection::HoursOfProtection);
 		auto now = std::chrono::system_clock::now();
 		auto endTime = now - protectionDaysInHours;
 		auto expireTime = std::chrono::duration_cast<std::chrono::minutes>(oldestDate - endTime);
@@ -158,16 +157,15 @@ inline void ChatCommand(AShooterPlayerController* player, FString* message, int 
 	if (parsed.IsValidIndex(1))
 	{
 		FString input = parsed[1];
-		auto value = input.ToString();
-		if (value.compare("info") == 0)
+		if (input.Compare("info") == 0)
 		{
 			Info(player, message, mode);
 		}
-		else if (value.compare("status") == 0)
+		else if (input.Compare("status") == 0)
 		{
 			Status(player, message, mode);
 		}
-		else if (value.compare("disable") == 0)
+		else if (input.Compare("disable") == 0)
 		{
 			Disable(player, message, mode);
 		}
@@ -257,20 +255,20 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 
 				//display protection removed message
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-					NewPlayerProtection::AdminTribeProtectionRemoved.ToString().c_str(), tribe_id);
+					*NewPlayerProtection::AdminTribeProtectionRemoved, tribe_id);
 			}
 			else //tribe not protected
 			{
 				//display tribe not under protection
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-					NewPlayerProtection::AdminTribeNotUnderProtection.ToString().c_str(), tribe_id);
+					*NewPlayerProtection::AdminTribeNotUnderProtection, tribe_id);
 			}
 		}
 		else // tribe not found
 		{
 			//display tribe not found
 			ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-				NewPlayerProtection::AdminNoTribeExistsMessage.ToString().c_str(), tribe_id);
+				*NewPlayerProtection::AdminNoTribeExistsMessage, tribe_id);
 		}
 	}
 }
@@ -365,20 +363,20 @@ inline void ConsoleResetProtectionDays(APlayerController* player, FString* cmd, 
 
 				//display protection added message
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-					NewPlayerProtection::AdminResetTribeProtectionSuccess.ToString().c_str(), NewPlayerProtection::DaysOfProtection, tribe_id);
+					*NewPlayerProtection::AdminResetTribeProtectionSuccess, NewPlayerProtection::HoursOfProtection, tribe_id);
 			}
 			else //tribe not under max level
 			{
 				//display tribe under max level message
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-					NewPlayerProtection::AdminResetTribeProtectionLvlFailure.ToString().c_str(), tribe_id);
+					*NewPlayerProtection::AdminResetTribeProtectionLvlFailure, tribe_id);
 			}
 		}
 		else // tribe not found
 		{
 			//display tribe not found
 			ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-				NewPlayerProtection::AdminNoTribeExistsMessage.ToString().c_str(), tribe_id);
+				*NewPlayerProtection::AdminNoTribeExistsMessage, tribe_id);
 		}
 	}
 }
@@ -553,7 +551,7 @@ inline void RconResetProtectionDays(RCONClientConnection* rcon_connection, RCONP
 				}
 
 				//display protection added message
-				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminResetTribeProtectionSuccess, NewPlayerProtection::DaysOfProtection, tribe_id));
+				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminResetTribeProtectionSuccess, NewPlayerProtection::HoursOfProtection, tribe_id));
 			}
 			else //tribe not under max level
 			{
