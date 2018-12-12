@@ -7,6 +7,7 @@
     "NPPCommandPrefix": "!",
     "NewPlayerDoingDamageMessage": "You can't attack structures while under New Player Protection!",
     "NewPlayerStructureTakingDamageMessage": "You can't attack structures that are under New Player Protection!",
+    "NewPlayerStructureTakingDamageFromUnknownTribemateMessage": "Your tribe can't attack structures that are under New Player Protection!",
     "NPPInvalidCommand": "Invalid chat command!",
     "NewPlayerProtectionDisableSuccess": "Your tribes protection has been disabled!",
     "NotANewPlayerMessage": "Your tribe is not under New Player Protection!",
@@ -15,9 +16,9 @@
     "AdminNoTribeExistsMessage": "No tribe with that ID exists; Tribe: {}",
     "AdminTribeProtectionRemoved": "Protection has been removed for Tribe: {}",
     "AdminTribeNotUnderProtection": "No protection to remove from Tribe: {}",
-    "AdminResetTribeProtectionSuccess": "{} day(s) of protection from now has been given to Tribe: {}",
+    "AdminResetTribeProtectionSuccess": "{} hour(s) of protection from now has been given to Tribe: {}",
     "AdminResetTribeProtectionLvlFailure": "A player is over the NPP Max Level. Cannot give protection to Tribe: {}",
-    "NPPInfoMessage": "NPP Server Settings: Days of Protection: {}, Max New Player Level: {}.",
+    "NPPInfoMessage": "NPP Server Settings: Hours of Protection: {}, Max New Player Level: {}.",
 
     "MessageIntervalInSecs": 10,
     "MessageTextSize": 1.4,
@@ -31,7 +32,7 @@
 
     "NewPlayerProtection": {
       "NewPlayerMaxLevel": 60,
-      "DaysOfProtection": 3
+      "HoursOfProtection": 72
     }
   }
 }

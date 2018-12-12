@@ -55,4 +55,12 @@
       <Filter>Lib</Filter>
     </Library>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="config.json">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="PluginInfo.json">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

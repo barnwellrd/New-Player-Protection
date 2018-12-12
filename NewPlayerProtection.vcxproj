@@ -208,6 +208,10 @@
     <Library Include="Lib\libMinHook.x64.lib" />
     <Library Include="Lib\Permissions.lib" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="config.json" />
+    <None Include="PluginInfo.json" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

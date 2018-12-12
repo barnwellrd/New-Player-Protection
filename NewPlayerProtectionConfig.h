@@ -111,11 +111,12 @@ inline void InitConfig()
 	NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures = NewPlayerProtection::config["General"]["AllowNewPlayersToDamageEnemyStructures"];
 	NewPlayerProtection::NPPCommandPrefix = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPCommandPrefix"]).c_str());
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
-	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
+	NewPlayerProtection::HoursOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["HoursOfProtection"];
 	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
 	NewPlayerProtection::AllowPlayersToDisableOwnedTribeProtection = NewPlayerProtection::config["General"]["AllowPlayersToDisableOwnedTribeProtection"];
 	NewPlayerProtection::NewPlayerDoingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerDoingDamageMessage"]).c_str());
 	NewPlayerProtection::NewPlayerStructureTakingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageMessage"]).c_str());
+	NewPlayerProtection::NewPlayerStructureTakingDamageFromUnknownTribemateMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageFromUnknownTribemateMessage"]).c_str());
 	NewPlayerProtection::NewPlayerProtectionDisableSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerProtectionDisableSuccess"]).c_str());
 	NewPlayerProtection::NotANewPlayerMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotANewPlayerMessage"]).c_str());
 	NewPlayerProtection::NotTribeAdminMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotTribeAdminMessage"]).c_str());
@@ -152,11 +153,12 @@ inline void ReloadConfig()
 	NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures = NewPlayerProtection::config["General"]["AllowNewPlayersToDamageEnemyStructures"];
 	NewPlayerProtection::NPPCommandPrefix = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPCommandPrefix"]).c_str());
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
-	NewPlayerProtection::DaysOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["DaysOfProtection"];
+	NewPlayerProtection::HoursOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["HoursOfProtection"];
 	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
 	NewPlayerProtection::AllowPlayersToDisableOwnedTribeProtection = NewPlayerProtection::config["General"]["AllowPlayersToDisableOwnedTribeProtection"];
 	NewPlayerProtection::NewPlayerDoingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerDoingDamageMessage"]).c_str());
 	NewPlayerProtection::NewPlayerStructureTakingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageMessage"]).c_str());
+	NewPlayerProtection::NewPlayerStructureTakingDamageFromUnknownTribemateMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageFromUnknownTribemateMessage"]).c_str());
 	NewPlayerProtection::NPPInvalidCommand = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPInvalidCommand"]).c_str());
 	NewPlayerProtection::NewPlayerProtectionDisableSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerProtectionDisableSuccess"]).c_str());
 	NewPlayerProtection::NotANewPlayerMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotANewPlayerMessage"]).c_str());
