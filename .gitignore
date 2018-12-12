@@ -5,3 +5,11 @@
 x64/Release/
 
 *.dll
+
+*.aps
+
+\.h
+
+*.rc
+
+*.user
