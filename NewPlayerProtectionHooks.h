@@ -230,7 +230,7 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 		{
 			uint64 attacking_tribeid = DamageCauser->TargetingTeamField();
 
-			if (EventInstigator && EventInstigator->IsA(APlayerController::StaticClass())) //EventInstigator != NULL
+			if (EventInstigator && EventInstigator->IsA(APlayerController::GetPrivateStaticClass())) //EventInstigator != NULL
 			{
 				uint64 steam_id = ArkApi::GetApiUtils().GetSteamIdFromController(EventInstigator);
 				AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
@@ -259,7 +259,9 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 				{
 					if (IsTribeProtected(attacked_tribeid))
 					{
-						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
+						FString* name = nullptr;
+						_this->GetDescriptiveName(name);
+						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id) && !name->Contains("C4"))
 						{
 							ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageMessage);
 						}

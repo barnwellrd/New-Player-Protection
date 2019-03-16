@@ -1,70 +1,94 @@
 #pragma once
 
-#include <sqlpp11/sqlpp11.h>
-#include <sqlpp11/mysql/mysql.h>
+#include <mysql++11.h>
 
-#include "MysqlDBObj.h"
+#include "IDatabase.h"
 
 #pragma comment(lib, "mysqlclient.lib")
-#pragma comment(lib, "sqlpp-mysql.lib")
-
-namespace mysql = sqlpp::mysql;
 
 class MySql : public IDatabase
 {
 public:
-	explicit MySql(const std::shared_ptr<mysql::connection_config>& config)
-		: db_(config)
+	explicit MySql(std::string server, std::string username, std::string password, std::string db_name,
+	               std::string table_players, std::string table_groups)
+		: table_players_(move(table_players)),
+		  table_groups_(move(table_groups))
 	{
 		try
 		{
-			db_.execute("CREATE TABLE IF NOT EXISTS Players ("
-				"Id INT NOT NULL AUTO_INCREMENT,"
-				"SteamId BIGINT(11) NOT NULL,"
-				"PermissionGroups VARCHAR(256) NOT NULL DEFAULT '',"
-				"PRIMARY KEY(Id),"
-				"UNIQUE INDEX SteamId_UNIQUE (SteamId ASC)); ");
-			db_.execute("CREATE TABLE IF NOT EXISTS PermissionGroups ("
-				"Id INT NOT NULL AUTO_INCREMENT,"
-				"GroupName VARCHAR(128) NOT NULL,"
-				"Permissions VARCHAR(256) NOT NULL DEFAULT '',"
-				"PRIMARY KEY(Id),"
-				"UNIQUE INDEX GroupName_UNIQUE (GroupName ASC)); ");
+			daotk::mysql::connect_options options;
+			options.server = move(server);
+			options.username = move(username);
+			options.password = move(password);
+			options.dbname = move(db_name);
+			options.autoreconnect = true;
+			options.timeout = 30;
+
+			bool result = db_.open(options);
+			if (!result)
+			{
+				Log::GetLog()->critical("Failed to open connection!");
+				return;
+			}
+
+			result = db_.query(fmt::format("CREATE TABLE IF NOT EXISTS {} ("
+			                               "Id INT NOT NULL AUTO_INCREMENT,"
+			                               "SteamId BIGINT(11) NOT NULL,"
+			                               "PermissionGroups VARCHAR(256) NOT NULL DEFAULT 'Default,',"
+			                               "PRIMARY KEY(Id),"
+			                               "UNIQUE INDEX SteamId_UNIQUE (SteamId ASC));", table_players_));
+			result |= db_.query(fmt::format("CREATE TABLE IF NOT EXISTS {} ("
+			                                "Id INT NOT NULL AUTO_INCREMENT,"
+			                                "GroupName VARCHAR(128) NOT NULL,"
+			                                "Permissions VARCHAR(768) NOT NULL DEFAULT '',"
+			                                "PRIMARY KEY(Id),"
+			                                "UNIQUE INDEX GroupName_UNIQUE (GroupName ASC));", table_groups_));
 
 			// Add default groups
 
-			db_.execute("INSERT INTO PermissionGroups(GroupName, Permissions)"
-				"SELECT 'Admins', '*,'"
-				"WHERE NOT EXISTS(SELECT 1 FROM PermissionGroups WHERE GroupName = 'Admins');");
-			db_.execute("INSERT INTO PermissionGroups(GroupName)"
-				"SELECT 'Default'"
-				"WHERE NOT EXISTS(SELECT 1 FROM PermissionGroups WHERE GroupName = 'Default');");
+			result |= db_.query(fmt::format("INSERT INTO {} (GroupName, Permissions)"
+			                                "SELECT 'Admins', '*,'"
+			                                "WHERE NOT EXISTS(SELECT 1 FROM {} WHERE GroupName = 'Admins');",
+			                                table_groups_,
+			                                table_groups_));
+			result |= db_.query(fmt::format("INSERT INTO {} (GroupName)"
+			                                "SELECT 'Default'"
+			                                "WHERE NOT EXISTS(SELECT 1 FROM {} WHERE GroupName = 'Default');",
+			                                table_groups_,
+			                                table_groups_));
+
+			if (!result)
+			{
+				Log::GetLog()->critical("({} {}) Failed to create table!", __FILE__, __FUNCTION__);
+			}
 		}
 		catch (const std::exception& exception)
 		{
-			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			Log::GetLog()->critical("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 		}
 	}
 
-	void AddPlayer(uint64 steam_id) override
+	bool AddPlayer(uint64 steam_id) override
 	{
 		try
 		{
-			db_.execute(fmt::format("INSERT INTO Players (SteamId) VALUES ({});", steam_id));
+			return db_.query(fmt::format("INSERT INTO {} (SteamId) VALUES ({});", table_players_, steam_id));
 		}
 		catch (const std::exception& exception)
 		{
 			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			return false;
 		}
 	}
 
 	bool IsPlayerExists(uint64 steam_id) override
 	{
-		const auto& players = Players{};
-
 		try
 		{
-			return db_(sqlpp::select(count(players.id)).from(players).where(players.steamid == steam_id)).front().count > 0;
+			const auto result = db_.query(fmt::format("SELECT count(1) FROM {} WHERE SteamId = {};", table_players_,
+			                                          steam_id))
+			                       .get_value<int>();
+			return result > 0;
 		}
 		catch (const std::exception& exception)
 		{
@@ -75,11 +99,13 @@ public:
 
 	bool IsGroupExists(const FString& group) override
 	{
-		const auto& groups = Groups{};
 		try
 		{
-			return db_(sqlpp::select(count(groups.id)).from(groups).where(groups.groupname == group.ToString()))
-			       .front().count > 0;
+			const auto result = db_.query(fmt::format("SELECT count(1) FROM {} WHERE GroupName = '{}';", table_groups_,
+			                                          group.ToString()))
+			                       .get_value<int>();
+
+			return result > 0;
 		}
 		catch (const std::exception& exception)
 		{
@@ -89,31 +115,22 @@ public:
 		return false;
 	}
 
-	bool IsPlayerInGroup(uint64 steam_id, const FString& group) override
-	{
-		TArray<FString> groups = GetPlayerGroups(steam_id);
-
-		for (const auto& current_group : groups)
-		{
-			if (current_group == group)
-				return true;
-		}
-
-		return false;
-	}
-
 	TArray<FString> GetPlayerGroups(uint64 steam_id) override
 	{
 		TArray<FString> groups;
-		const auto& players = Players{};
+
 		try
 		{
-			for (const auto& row : db_(
-				     sqlpp::select().columns(players.groups).from(players).where(players.steamid == steam_id)))
+			const auto permission_groups = db_.query(
+				                                  fmt::format(
+					                                  "SELECT PermissionGroups FROM {} WHERE SteamId = {};",
+					                                  table_players_, steam_id))
+			                                  .get_value<daotk::mysql::optional_type<std::string>>();
+
+			if (permission_groups)
 			{
-				FString groups_fstr(row.groups.text);
+				FString groups_fstr(*permission_groups);
 				groups_fstr.ParseIntoArray(groups, L",", true);
-				break;
 			}
 		}
 		catch (const std::exception& exception)
@@ -130,16 +147,16 @@ public:
 			return {};
 
 		TArray<FString> permissions;
-		const auto& groups = Groups{};
+
 		try
 		{
-			for (const auto& row : db_(
-				     sqlpp::select().columns(groups.permissions).from(groups).where(groups.groupname == group.ToString())))
-			{
-				FString permissions_fstr(row.permissions.text);
-				permissions_fstr.ParseIntoArray(permissions, L",", true);
-				break;
-			}
+			const std::string permission_groups = db_.query(fmt::format(
+				                                         "SELECT Permissions FROM {} WHERE GroupName = '{}';",
+				                                         table_groups_, group.ToString()))
+			                                         .get_value<std::string>();
+
+			FString permissions_fstr(permission_groups);
+			permissions_fstr.ParseIntoArray(permissions, L",", true);
 		}
 		catch (const std::exception& exception)
 		{
@@ -152,15 +169,15 @@ public:
 	TArray<FString> GetAllGroups() override
 	{
 		TArray<FString> all_groups;
-		const auto& groups = Groups{};
+
 		try
 		{
-			for (const auto& row : db_(
-				     sqlpp::select().columns(groups.groupname).from(groups).where(groups.id > -1)))
-				// Bug within library: doesn't compile without 'where'
-			{
-				all_groups.Add(row.groupname.text);
-			}
+			db_.query(fmt::format("SELECT GroupName FROM {};", table_groups_))
+			   .each([&all_groups](std::string group)
+			   {
+				   all_groups.Add(group.c_str());
+				   return true;
+			   });
 		}
 		catch (const std::exception& exception)
 		{
@@ -173,14 +190,17 @@ public:
 	TArray<uint64> GetGroupMembers(const FString& group) override
 	{
 		TArray<uint64> members;
-		const auto& players = Players{};
+
 		try
 		{
-			for (const auto& row : db_(sqlpp::select().columns(players.steamid).from(players).unconditionally()))
-			{
-				if (IsPlayerInGroup(row.steamid, group))
-					members.Add(row.steamid);
-			}
+			db_.query(fmt::format("SELECT SteamId FROM {};", table_players_))
+			   .each([&members, &group](uint64 steam_id)
+			   {
+				   if (Permissions::IsPlayerInGroup(steam_id, group))
+					   members.Add(steam_id);
+
+				   return true;
+			   });
 		}
 		catch (const std::exception& exception)
 		{
@@ -192,16 +212,24 @@ public:
 
 	std::optional<std::string> AddPlayerToGroup(uint64 steam_id, const FString& group) override
 	{
-		if (!IsPlayerExists(steam_id) || !IsGroupExists(group))
-			return "Player or group does not exist";
+		if (!IsPlayerExists(steam_id))
+			AddPlayer(steam_id);
 
-		if (IsPlayerInGroup(steam_id, group))
+		if (!IsGroupExists(group))
+			return  "Group does not exist";
+
+		if (Permissions::IsPlayerInGroup(steam_id, group))
 			return "Player was already added";
 
 		try
 		{
-			db_.execute(fmt::format("UPDATE Players SET PermissionGroups = concat(PermissionGroups, '{},') WHERE SteamId = {};",
-			                        group.ToString(), steam_id));
+			const bool res = db_.query(fmt::format(
+				"UPDATE {} SET PermissionGroups = concat(PermissionGroups, '{},') WHERE SteamId = {};",
+				table_players_, group.ToString(), steam_id));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
 		}
 		catch (const std::exception& exception)
 		{
@@ -217,7 +245,7 @@ public:
 		if (!IsPlayerExists(steam_id) || !IsGroupExists(group))
 			return "Player or group does not exist";
 
-		if (!IsPlayerInGroup(steam_id, group))
+		if (!Permissions::IsPlayerInGroup(steam_id, group))
 			return "Player is not in group";
 
 		TArray<FString> groups = GetPlayerGroups(steam_id);
@@ -232,8 +260,12 @@ public:
 
 		try
 		{
-			db_.execute(fmt::format("UPDATE Players SET PermissionGroups = '{}' WHERE SteamId = {};", new_groups.ToString(),
-			                        steam_id));
+			const bool res = db_.query(fmt::format("UPDATE {} SET PermissionGroups = '{}' WHERE SteamId = {};",
+			                                       table_players_, new_groups.ToString(), steam_id));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
 		}
 		catch (const std::exception& exception)
 		{
@@ -251,7 +283,12 @@ public:
 
 		try
 		{
-			db_.execute(fmt::format("INSERT INTO PermissionGroups (GroupName) VALUES ('{}');", group.ToString()));
+			const bool res = db_.query(fmt::format("INSERT INTO {} (GroupName) VALUES ('{}');", table_groups_,
+			                                       group.ToString()));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
 		}
 		catch (const std::exception& exception)
 		{
@@ -279,7 +316,12 @@ public:
 
 		try
 		{
-			db_.execute(fmt::format("DELETE FROM PermissionGroups WHERE GroupName = '?';", group.ToString()));
+			const bool res = db_.query(fmt::format("DELETE FROM {} WHERE GroupName = '{}';", table_groups_,
+			                                       group.ToString()));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
 		}
 		catch (const std::exception& exception)
 		{
@@ -290,48 +332,23 @@ public:
 		return {};
 	}
 
-	bool IsGroupHasPermission(const FString& group, const FString& permission) override
-	{
-		if (!IsGroupExists(group))
-			return false;
-
-		TArray<FString> permissions = GetGroupPermissions(group);
-
-		for (const auto& current_perm : permissions)
-		{
-			if (current_perm == permission)
-				return true;
-		}
-
-		return false;
-	}
-
-	bool IsPlayerHasPermission(uint64 steam_id, const FString& permission) override
-	{
-		TArray<FString> groups = GetPlayerGroups(steam_id);
-
-		for (const auto& current_group : groups)
-		{
-			if (IsGroupHasPermission(current_group, permission) || IsGroupHasPermission(current_group, "*"))
-				return true;
-		}
-
-		return false;
-	}
-
 	std::optional<std::string> GroupGrantPermission(const FString& group, const FString& permission) override
 	{
 		if (!IsGroupExists(group))
 			return "Group does not exist";
 
-		if (IsGroupHasPermission(group, permission))
+		if (Permissions::IsGroupHasPermission(group, permission))
 			return "Group already has this permission";
 
 		try
 		{
-			db_.execute(fmt::format(
-				"UPDATE PermissionGroups SET Permissions = concat(Permissions, '{},') WHERE GroupName = '{}';",
-				permission.ToString(), group.ToString()));
+			const bool res = db_.query(fmt::format(
+				"UPDATE {} SET Permissions = concat(Permissions, '{},') WHERE GroupName = '{}';",
+				table_groups_, permission.ToString(), group.ToString()));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
 		}
 		catch (const std::exception& exception)
 		{
@@ -347,7 +364,7 @@ public:
 		if (!IsGroupExists(group))
 			return "Group does not exist";
 
-		if (!IsGroupHasPermission(group, permission))
+		if (!Permissions::IsGroupHasPermission(group, permission))
 			return "Group does not have this permission";
 
 		TArray<FString> permissions = GetGroupPermissions(group);
@@ -362,9 +379,12 @@ public:
 
 		try
 		{
-			db_.execute(fmt::format("UPDATE PermissionGroups SET Permissions = '?' WHERE GroupName = '?';",
-			                        new_permissions.ToString(),
-			                        group.ToString()));
+			const bool res = db_.query(fmt::format("UPDATE {} SET Permissions = '{}' WHERE GroupName = '{}';",
+			                                       table_groups_, new_permissions.ToString(), group.ToString()));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
 		}
 		catch (const std::exception& exception)
 		{
@@ -376,5 +396,7 @@ public:
 	}
 
 private:
-	mysql::connection db_;
+	daotk::mysql::connection db_;
+	std::string table_players_;
+	std::string table_groups_;
 };

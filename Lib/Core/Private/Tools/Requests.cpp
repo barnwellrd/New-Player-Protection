@@ -1,15 +1,25 @@
 #include <Requests.h>
 
-namespace ArkApi
+#include <curl/curl.h>
+
+#include "../IBaseApi.h"
+
+namespace API
 {
 	Requests::Requests()
+		: curl_(curl_multi_init())
 	{
-		GetCommands().AddOnTimerCallback("RequestsUpdate", &Update);
+		curl_global_init(CURL_GLOBAL_DEFAULT);
+
+		game_api->GetCommands()->AddOnTimerCallback("RequestsUpdate",
+		                                            std::bind(&Requests::Update, this));
 	}
 
 	Requests::~Requests()
 	{
-		GetCommands().RemoveOnTimerCallback("RequestsUpdate");
+		game_api->GetCommands()->RemoveOnTimerCallback("RequestsUpdate");
+
+		curl_global_cleanup();
 	}
 
 	Requests& Requests::Get()
@@ -18,68 +28,134 @@ namespace ArkApi
 		return instance;
 	}
 
-	bool Requests::CreateRequest(FString& url, FString& verb,
-	                             const std::function<void(TSharedRef<IHttpRequest>, bool)>& callback, FString content,
-	                             bool auto_remove)
+	bool Requests::CreateGetRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
+	                                std::vector<std::string> headers)
 	{
-		TSharedRef<IHttpRequest> request;
-		FHttpModule::Get()->CreateRequest(&request);
+		CURL* handle = curl_easy_init();
+		if (!handle)
+		{
+			return false;
+		}
 
-		FString header_name = "Content-Type";
-		FString header_value = "text/html";
-		FString Accepts_name = "Accepts";
-		FString Accepts_value = "*/*";
+		requests_[handle] = std::make_unique<Request>(callback);
 
-		request->SetHeader(&header_name, &header_value);
-		request->SetHeader(&Accepts_name, &Accepts_value);
-		request->SetURL(&url);
-		request->SetVerb(&verb);
-		request->SetContentAsString(&content);
+		curl_slist* chunk = nullptr;
 
-		requests_.push_back({request, callback, false, !auto_remove});
+		for (const std::string& header : headers)
+		{
+			chunk = curl_slist_append(chunk, header.c_str());
+		}
 
-		return request->ProcessRequest();
+		curl_easy_setopt(handle, CURLOPT_HTTPHEADER, chunk);
+		curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &Requests::WriteCallback);
+		curl_easy_setopt(handle, CURLOPT_WRITEDATA, &requests_[handle]->read_buffer);
+		curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_easy_setopt(handle, CURLOPT_TIMEOUT, 120L);
+
+		curl_multi_add_handle(curl_, handle);
+
+		const CURLMcode res = curl_multi_perform(curl_, &handles_count_);
+
+		return res == CURLM_OK;
 	}
 
-	void Requests::RemoveRequest(const TSharedRef<IHttpRequest>& request)
+	bool Requests::CreatePostRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
+	                                 const std::string& post_data, std::vector<std::string> headers)
 	{
-		requests_.erase(remove_if(requests_.begin(), requests_.end(), [&request](const Request& cur_request)
-	                          {
-		                          return cur_request.request == request;
-	                          }), requests_.end());
+		CURL* handle = curl_easy_init();
+		if (!handle)
+		{
+			return false;
+		}
+
+		requests_[handle] = std::make_unique<Request>(callback);
+
+		curl_slist* chunk = nullptr;
+
+		for (const std::string& header : headers)
+		{
+			chunk = curl_slist_append(chunk, header.c_str());
+		}
+
+		curl_easy_setopt(handle, CURLOPT_HTTPHEADER, chunk);
+		curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &Requests::WriteCallback);
+		curl_easy_setopt(handle, CURLOPT_WRITEDATA, &requests_[handle]->read_buffer);
+		curl_easy_setopt(handle, CURLOPT_POST, 1);
+		curl_easy_setopt(handle, CURLOPT_POSTFIELDS, post_data.c_str());
+		curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_easy_setopt(handle, CURLOPT_TIMEOUT, 120L);
+
+		curl_multi_add_handle(curl_, handle);
+
+		const CURLMcode res = curl_multi_perform(curl_, &handles_count_);
+
+		return res == CURLM_OK;
+	}
+
+	bool Requests::CreateDeleteRequest(const std::string& url, const std::function<void(bool, std::string)>& callback,
+	                                   std::vector<std::string> headers)
+	{
+		CURL* handle = curl_easy_init();
+		if (!handle)
+		{
+			return false;
+		}
+
+		requests_[handle] = std::make_unique<Request>(callback);
+
+		curl_slist* chunk = nullptr;
+
+		for (const std::string& header : headers)
+		{
+			chunk = curl_slist_append(chunk, header.c_str());
+		}
+
+		curl_easy_setopt(handle, CURLOPT_HTTPHEADER, chunk);
+		curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &Requests::WriteCallback);
+		curl_easy_setopt(handle, CURLOPT_WRITEDATA, &requests_[handle]->read_buffer);
+		curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+		curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_easy_setopt(handle, CURLOPT_TIMEOUT, 120L);
+
+		curl_multi_add_handle(curl_, handle);
+
+		const CURLMcode res = curl_multi_perform(curl_, &handles_count_);
+
+		return res == CURLM_OK;
+	}
+
+	size_t Requests::WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
+	{
+		if (userp == nullptr)
+			return 0;
+
+		static_cast<std::string*>(userp)->append(static_cast<char*>(contents), size * nmemb);
+		return size * nmemb;
 	}
 
 	void Requests::Update()
 	{
-		auto& requests = Get().requests_;
+		if (handles_count_ == 0)
+			return;
 
-		requests.erase(remove_if(requests.begin(), requests.end(), [](const Request& request)
-	                         {
-		                         return !request.remove_manually && request.completed;
-	                         }), requests.end());
+		curl_multi_perform(curl_, &handles_count_);
 
-		const auto size = requests.size();
-		for (auto i = 0; i < size; ++i)
+		int msgq;
+		CURLMsg* m = curl_multi_info_read(curl_, &msgq);
+		if (m && m->msg == CURLMSG_DONE)
 		{
-			auto& request = requests[i];
+			CURL* handle = m->easy_handle;
 
-			const auto status = request.request->GetStatus();
-			switch (status)
-			{
-			case EHttpRequestStatus::Succeeded:
-			case EHttpRequestStatus::Failed:
-				if (!request.completed)
-				{
-					request.completed = true;
+			auto& request = requests_[handle];
+			request->callback(m->data.result == CURLE_OK, move(request->read_buffer));
 
-					request.callback(request.request, status == EHttpRequestStatus::Succeeded);
-				}
-				break;
-			case EHttpRequestStatus::NotStarted:
-			case EHttpRequestStatus::Processing:
-				break;
-			default: ;
-			}
+			requests_.erase(handle);
+
+			curl_multi_remove_handle(curl_, handle);
+			curl_easy_cleanup(handle);
 		}
 	}
-}
+} // namespace API
