@@ -259,9 +259,7 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 				{
 					if (IsTribeProtected(attacked_tribeid))
 					{
-						FString* name = nullptr;
-						_this->GetDescriptiveName(name);
-						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id) && !name->Contains("C4"))
+						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
 						{
 							ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageMessage);
 						}
