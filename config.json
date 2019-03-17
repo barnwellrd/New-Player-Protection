@@ -1,7 +1,7 @@
 {
   "General": {
     "DbPathOverride": "",
-    "PlayerUpdateIntervalInMins": 1,
+    "PlayerUpdateIntervalInMins": 5,
     "AllowNewPlayersToDamageEnemyStructures": false,
     "AllowPlayersToDisableOwnedTribeProtection": true,
     "NPPCommandPrefix": "!",
