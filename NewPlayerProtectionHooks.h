@@ -230,7 +230,7 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 		{
 			uint64 attacking_tribeid = DamageCauser->TargetingTeamField();
 
-			if (EventInstigator && EventInstigator->IsA(APlayerController::GetPrivateStaticClass())) //EventInstigator != NULL
+			if (EventInstigator && EventInstigator->IsA(AShooterPlayerController::GetPrivateStaticClass())) //EventInstigator != NULL
 			{
 				uint64 steam_id = ArkApi::GetApiUtils().GetSteamIdFromController(EventInstigator);
 				AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
