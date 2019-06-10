@@ -25,6 +25,8 @@ namespace NewPlayerProtection
 	FString AdminResetTribeProtectionSuccess;
 	FString AdminResetTribeProtectionLvlFailure;
 	FString NPPInfoMessage;
+	FString TribeIDText;
+	FString NoStructureForTribeIDText;
 	int MessageIntervalInSecs;
 	float MessageTextSize;
 	float MessageDisplayDelay;
@@ -34,11 +36,13 @@ namespace NewPlayerProtection
 	std::chrono::time_point<std::chrono::system_clock>  next_player_update;
 	std::chrono::time_point<std::chrono::system_clock>  next_db_update;
 
-	nlohmann::json config, TempConfig;
+	nlohmann::json config;
+	nlohmann::json TempConfig;
+
 	sqlite::database& GetDB();
 
 	std::string GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime);
-	std::chrono::time_point<std::chrono::system_clock> GetDateTime(std::string timestamp);
+	std::chrono::time_point<std::chrono::system_clock> GetDateTime(std::string const & timestamp);
 
 	class TimerProt
 	{

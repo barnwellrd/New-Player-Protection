@@ -6,8 +6,6 @@ inline void ResetStructures(APlayerController* player_controller, FString*, bool
 	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
 
-	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
-
 	/**
 	* \brief Finds all Structures owned by team
 	*/
@@ -25,18 +23,16 @@ inline void ResetStructures(APlayerController* player_controller, FString*, bool
 	ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(0, 255, 0), "Updated all structures to default!");
 }
 
-inline void Info(AShooterPlayerController* player, FString* message, int mode)
+inline void Info(AShooterPlayerController* player)
 {
 	ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 		*NewPlayerProtection::NPPInfoMessage, NewPlayerProtection::HoursOfProtection, NewPlayerProtection::MaxLevel);
 }
 
-inline void Disable(AShooterPlayerController* player, FString* message, int mode)
+inline void Disable(AShooterPlayerController* player)
 {
 	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player) || !NewPlayerProtection::AllowPlayersToDisableOwnedTribeProtection)
 		return;
-
-	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
 
 	//if new player
 	if (IsPlayerProtected(player))
@@ -84,19 +80,17 @@ inline void Disable(AShooterPlayerController* player, FString* message, int mode
 	}
 }
 
-inline void Status(AShooterPlayerController* player, FString* message, int mode)
+inline void Status(AShooterPlayerController* player)
 {
 	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
 		return;
-
-	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
 
 	//if new player
 	if (IsPlayerProtected(player))
 	{
 		//loop through tribe member
 		uint64 tribe_id = player->TargetingTeamField();
-		std::chrono::time_point<std::chrono::system_clock> oldestDate = std::chrono::system_clock::now();;
+		std::chrono::time_point<std::chrono::system_clock> oldestDate = std::chrono::system_clock::now();
 		int highestLevel = 0;
 
 		auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
@@ -149,6 +143,30 @@ inline void Status(AShooterPlayerController* player, FString* message, int mode)
 	}
 }
 
+inline void GetTribeID(AShooterPlayerController* player)
+{
+	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
+		return;
+
+	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
+		false, false);
+
+	if (Actor && Actor->IsA(APrimalStructure::GetPrivateStaticClass()))
+	{
+		APrimalStructure* Structure = static_cast<APrimalStructure*>(Actor);
+		const int teamId = Structure->TargetingTeamField();
+		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+			*NewPlayerProtection::TribeIDText, teamId);
+	
+		
+	}
+	else
+	{
+		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+			*NewPlayerProtection::NoStructureForTribeIDText);
+	}
+}
+
 inline void ChatCommand(AShooterPlayerController* player, FString* message, int mode)
 {
 	TArray<FString> parsed;
@@ -159,15 +177,19 @@ inline void ChatCommand(AShooterPlayerController* player, FString* message, int 
 		FString input = parsed[1];
 		if (input.Compare("info") == 0)
 		{
-			Info(player, message, mode);
+			Info(player);
 		}
 		else if (input.Compare("status") == 0)
 		{
-			Status(player, message, mode);
+			Status(player);
 		}
 		else if (input.Compare("disable") == 0)
 		{
-			Disable(player, message, mode);
+			Disable(player);
+		}
+		else if (input.Compare("tribeid") == 0)
+		{
+			GetTribeID(player);
 		}
 		else
 		{
@@ -601,7 +623,7 @@ inline void ConsoleReloadConfig(APlayerController* player, FString* cmd, bool bo
 	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
 	RemoveChatCommands();
-	ReloadConfig();
+	LoadConfig();
 	InitChatCommands();
 	ResetPlayerProtection();
 }
@@ -609,7 +631,7 @@ inline void ConsoleReloadConfig(APlayerController* player, FString* cmd, bool bo
 inline void RconReloadConfig(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
 {
 	RemoveChatCommands();
-	ReloadConfig();
+	LoadConfig();
 	InitChatCommands();
 	ResetPlayerProtection();
 }

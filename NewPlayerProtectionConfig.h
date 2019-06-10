@@ -4,12 +4,9 @@
 
 std::string NewPlayerProtection::GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime)
 {
-	using namespace std;
-	using namespace std::chrono;
-
-	auto ttime_t = system_clock::to_time_t(datetime);
-	auto tp_sec = system_clock::from_time_t(ttime_t);
-	milliseconds ms = duration_cast<milliseconds>(datetime - tp_sec);
+	auto ttime_t = std::chrono::system_clock::to_time_t(datetime);
+	auto tp_sec = std::chrono::system_clock::from_time_t(ttime_t);
+	std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(datetime - tp_sec);
 
 	std::tm * ttm = localtime(&ttime_t);
 
@@ -19,19 +16,22 @@ std::string NewPlayerProtection::GetTimestamp(std::chrono::time_point<std::chron
 
 	strftime(time_str, strlen(time_str), date_time_format, ttm);
 
-	string result(time_str);
+	std::string result(time_str);
 	result.append(".");
-	result.append(to_string(ms.count()));
+	result.append(std::to_string(ms.count()));
 
 	return result;
 }
 
-std::chrono::time_point<std::chrono::system_clock> NewPlayerProtection::GetDateTime(std::string timestamp)
+std::chrono::time_point<std::chrono::system_clock> NewPlayerProtection::GetDateTime(std::string const & timestamp)
 {
-	using namespace std;
-	using namespace std::chrono;
-
-	int yyyy, mm, dd, HH, MM, SS, fff;
+	int yyyy;
+	int mm;
+	int dd;
+	int HH;
+	int MM;
+	int SS;
+	int fff;
 
 	char scanf_format[] = "%4d.%2d.%2d-%2d.%2d.%2d.%3d";
 
@@ -48,7 +48,7 @@ std::chrono::time_point<std::chrono::system_clock> NewPlayerProtection::GetDateT
 
 	time_t ttime_t = mktime(&ttm);
 
-	system_clock::time_point time_point_result = std::chrono::system_clock::from_time_t(ttime_t);
+	std::chrono::system_clock::time_point time_point_result = std::chrono::system_clock::from_time_t(ttime_t);
 
 	time_point_result += std::chrono::milliseconds(fff);
 	return time_point_result;
@@ -73,17 +73,12 @@ void LoadDB()
 		"Level integer default 0,"
 		"Is_New_Player integer default 0"
 		");";
-}
 
-void LoadDataBase()
-{
-	auto& db = NewPlayerProtection::GetDB();
-
-try
+	try
 	{
 		auto res = db << "SELECT * FROM Players;";
 
-		res >> [](uint64 steamid, uint64 tribeid, std::string startdate, int level, int isnewplayer)
+		res >> [](uint64 steamid, uint64 tribeid, std::string const & startdate, int level, int isnewplayer)
 		{
 			NewPlayerProtection::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NewPlayerProtection::GetDateTime(startdate), level, isnewplayer);
 		};
@@ -95,49 +90,7 @@ try
 	}
 }
 
-inline void InitConfig()
-{
-	std::ifstream file(ArkApi::Tools::GetCurrentDir() + "/ArkApi/Plugins/NewPlayerProtection/config.json");
-
-	if (!file.is_open())
-	{
-		return;
-	}
-
-	file >> NewPlayerProtection::config;
-	file.close();
-
-	NewPlayerProtection::PlayerUpdateIntervalInMins = NewPlayerProtection::config["General"]["PlayerUpdateIntervalInMins"];
-	NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures = NewPlayerProtection::config["General"]["AllowNewPlayersToDamageEnemyStructures"];
-	NewPlayerProtection::NPPCommandPrefix = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPCommandPrefix"]).c_str());
-	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
-	NewPlayerProtection::HoursOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["HoursOfProtection"];
-	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
-	NewPlayerProtection::AllowPlayersToDisableOwnedTribeProtection = NewPlayerProtection::config["General"]["AllowPlayersToDisableOwnedTribeProtection"];
-	NewPlayerProtection::NewPlayerDoingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerDoingDamageMessage"]).c_str());
-	NewPlayerProtection::NewPlayerStructureTakingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageMessage"]).c_str());
-	NewPlayerProtection::NewPlayerStructureTakingDamageFromUnknownTribemateMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageFromUnknownTribemateMessage"]).c_str());
-	NewPlayerProtection::NewPlayerProtectionDisableSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerProtectionDisableSuccess"]).c_str());
-	NewPlayerProtection::NotANewPlayerMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotANewPlayerMessage"]).c_str());
-	NewPlayerProtection::NotTribeAdminMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotTribeAdminMessage"]).c_str());
-	NewPlayerProtection::NPPRemainingMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPRemainingMessage"]).c_str());
-	NewPlayerProtection::AdminNoTribeExistsMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminNoTribeExistsMessage"]).c_str());
-	NewPlayerProtection::AdminTribeProtectionRemoved = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminTribeProtectionRemoved"]).c_str());
-	NewPlayerProtection::AdminTribeNotUnderProtection = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminTribeNotUnderProtection"]).c_str());
-	NewPlayerProtection::AdminResetTribeProtectionSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminResetTribeProtectionSuccess"]).c_str());
-	NewPlayerProtection::AdminResetTribeProtectionLvlFailure = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminResetTribeProtectionLvlFailure"]).c_str());
-	NewPlayerProtection::NPPInfoMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPInfoMessage"]).c_str());
-	NewPlayerProtection::MessageIntervalInSecs = NewPlayerProtection::config["General"]["MessageIntervalInSecs"];
-	NewPlayerProtection::MessageTextSize = NewPlayerProtection::config["General"]["MessageTextSize"];
-	NewPlayerProtection::MessageDisplayDelay = NewPlayerProtection::config["General"]["MessageDisplayDelay"];
-	NewPlayerProtection::TempConfig = NewPlayerProtection::config["General"]["MessageColor"];
-	NewPlayerProtection::MessageColor = FLinearColor(NewPlayerProtection::TempConfig[0], NewPlayerProtection::TempConfig[1], NewPlayerProtection::TempConfig[2], NewPlayerProtection::TempConfig[3]);
-
-	LoadDB();
-	LoadDataBase();
-}
-
-inline void ReloadConfig()
+inline void LoadConfig()
 {
 	std::ifstream file(ArkApi::Tools::GetCurrentDir() + "/ArkApi/Plugins/NewPlayerProtection/config.json");
 
@@ -170,10 +123,20 @@ inline void ReloadConfig()
 	NewPlayerProtection::AdminResetTribeProtectionSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminResetTribeProtectionSuccess"]).c_str());
 	NewPlayerProtection::AdminResetTribeProtectionLvlFailure = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminResetTribeProtectionLvlFailure"]).c_str());
 	NewPlayerProtection::NPPInfoMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPInfoMessage"]).c_str());
+	NewPlayerProtection::TribeIDText = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["TribeIDText"]).c_str());
+	NewPlayerProtection::NoStructureForTribeIDText = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NoStructureForTribeIDText"]).c_str());
 	NewPlayerProtection::MessageIntervalInSecs = NewPlayerProtection::config["General"]["MessageIntervalInSecs"];
 	NewPlayerProtection::MessageTextSize = NewPlayerProtection::config["General"]["MessageTextSize"];
 	NewPlayerProtection::MessageDisplayDelay = NewPlayerProtection::config["General"]["MessageDisplayDelay"];
 	NewPlayerProtection::TempConfig = NewPlayerProtection::config["General"]["MessageColor"];
 	NewPlayerProtection::MessageColor = FLinearColor(NewPlayerProtection::TempConfig[0], NewPlayerProtection::TempConfig[1], NewPlayerProtection::TempConfig[2], NewPlayerProtection::TempConfig[3]);
 }
+
+
+inline void InitConfig()
+{
+	LoadConfig();
+	LoadDB();
+}
+
 

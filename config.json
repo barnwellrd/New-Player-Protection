@@ -1,7 +1,7 @@
 {
   "General": {
     "DbPathOverride": "",
-    "PlayerUpdateIntervalInMins": 5,
+    "PlayerUpdateIntervalInMins": 1,
     "AllowNewPlayersToDamageEnemyStructures": false,
     "AllowPlayersToDisableOwnedTribeProtection": true,
     "NPPCommandPrefix": "!",
@@ -19,6 +19,8 @@
     "AdminResetTribeProtectionSuccess": "{} hour(s) of protection from now has been given to Tribe: {}",
     "AdminResetTribeProtectionLvlFailure": "A player is over the NPP Max Level. Cannot give protection to Tribe: {}",
     "NPPInfoMessage": "NPP Server Settings: Hours of Protection: {}, Max New Player Level: {}.",
+    "TribeIDText": "Target structure's Tribe ID: {}.",
+    "NoStructureForTribeIDText": "Please face the middle of your screen towards the structure you want to retrieve the Tribe ID from.",
 
     "MessageIntervalInSecs": 10,
     "MessageTextSize": 1.4,

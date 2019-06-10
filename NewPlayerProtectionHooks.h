@@ -71,7 +71,7 @@ void RemoveExpiredTribesProtection()
 		//check all players for expired
 		auto diff = std::chrono::duration_cast<std::chrono::seconds>(allData->startDateTime - endTime);
 
-		if ((diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel || allData->isNewPlayer == 0))
+		if (diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel || allData->isNewPlayer == 0)
 		{
 			allData->isNewPlayer = 0;
 			//if not an admin
@@ -82,30 +82,16 @@ void RemoveExpiredTribesProtection()
 				{
 					if (allData->tribe_id == moreAllData->tribe_id)
 					{
-						if (IsAdmin(moreAllData->steam_id))
-						{
-							continue;
-						}
-						else
-						{
-							moreAllData->isNewPlayer = 0;
-						}
+						moreAllData->isNewPlayer = 0;
 					}
 				}
 
 				//update online players with same steam id and tribe id
 				for (const auto& onlineData : online_players_)
 				{
-					if (allData->steam_id == onlineData->steam_id)
+					if (allData->steam_id == onlineData->steam_id || allData->tribe_id == onlineData->tribe_id)
 					{
 						onlineData->isNewPlayer = 0;
-					}
-					if (allData->tribe_id == onlineData->tribe_id)
-					{
-						if (!IsAdmin(onlineData->steam_id))
-						{
-							onlineData->isNewPlayer = 0;
-						}
 					}
 				}
 			}
@@ -146,9 +132,8 @@ uint64 GetMaxUnknownTribeId()
 
 	for (const auto& data : all_players_)
 	{
-		if (data->tribe_id < 99999)
+		if (data->tribe_id < 99999 && tribeid < data->tribe_id)
 		{
-			if (tribeid < data->tribe_id)
 				tribeid = data->tribe_id;
 		}
 	}
@@ -178,12 +163,6 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 
 	if (!IsPlayerExists(steam_id))
 	{
-		AActor* pc = static_cast<AActor*>(player_character);
-		APlayerState* player_state = static_cast<APlayerState*>(pc);
-		AShooterPlayerState* shooter_player_state = static_cast<AShooterPlayerState*>(player_state);
-
-		auto& db = NewPlayerProtection::GetDB();
-
 		AShooterPlayerState* ASPS = static_cast<AShooterPlayerState*>(new_player->PlayerStateField());
 		team_id = ASPS->TargetingTeamField();
 
@@ -232,7 +211,7 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 
 			if (EventInstigator && EventInstigator->IsA(AShooterPlayerController::GetPrivateStaticClass())) //EventInstigator != NULL
 			{
-				uint64 steam_id = ArkApi::GetApiUtils().GetSteamIdFromController(EventInstigator);
+				uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(EventInstigator);
 				AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
 				
 				if (IsAdmin(steam_id))
@@ -279,15 +258,12 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 
 					for (const auto& onlineData : online_players_)
 					{
-						if (onlineData->tribe_id == attacking_tribeid)
+						if (onlineData->tribe_id == attacking_tribeid && NewPlayerProtection::TimerProt::Get().IsNextMessageReady(onlineData->steam_id))
 						{
-							if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(onlineData->steam_id))
+							auto tribe_player = ArkApi::GetApiUtils().FindPlayerFromSteamId(onlineData->steam_id);
+							if (!ArkApi::IApiUtils::IsPlayerDead(tribe_player))
 							{
-								auto tribe_player = ArkApi::GetApiUtils().FindPlayerFromSteamId(onlineData->steam_id);
-								if (!ArkApi::GetApiUtils().IsPlayerDead(tribe_player))
-								{
-									ArkApi::GetApiUtils().SendNotification(tribe_player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageFromUnknownTribemateMessage);
-								}
+								ArkApi::GetApiUtils().SendNotification(tribe_player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageFromUnknownTribemateMessage);
 							}
 						}
 					}
@@ -326,7 +302,10 @@ void NewPlayerProtection::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tri
 {
 	const auto iter = std::find_if(
 		all_players_.begin(), all_players_.end(),
-		[steam_id](const std::shared_ptr<AllPlayerData>& data) -> bool { return data->steam_id == steam_id; });
+		[steam_id](const std::shared_ptr<AllPlayerData>& data)
+		{ 
+			return data->steam_id == steam_id; 
+		});
 
 	if (iter != all_players_.end())
 		return;
@@ -338,7 +317,10 @@ void NewPlayerProtection::TimerProt::AddNewPlayer(uint64 steam_id, uint64 tribe_
 {
 	const auto iter = std::find_if(
 		all_players_.begin(), all_players_.end(),
-		[steam_id](const std::shared_ptr<AllPlayerData>& data) -> bool { return data->steam_id == steam_id; });
+		[steam_id](const std::shared_ptr<AllPlayerData>& data)
+		{ 
+			return data->steam_id == steam_id; 
+		});
 
 	if (iter != all_players_.end())
 		return;
@@ -350,7 +332,10 @@ void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
 {
 	const auto iter = std::find_if(
 		online_players_.begin(), online_players_.end(),
-		[steam_id](const std::shared_ptr<OnlinePlayersData>& data) -> bool { return data->steam_id == steam_id; });
+		[steam_id](const std::shared_ptr<OnlinePlayersData>& data)
+		{ 
+			return data->steam_id == steam_id; 
+		});
 
 	if (iter != online_players_.end())
 		return;
@@ -381,7 +366,10 @@ void NewPlayerProtection::TimerProt::RemovePlayer(uint64 steam_id)
 {
 	const auto iter = std::find_if(
 		online_players_.begin(), online_players_.end(),
-		[steam_id](const std::shared_ptr<OnlinePlayersData>& data) -> bool { return data->steam_id == steam_id; });
+		[steam_id](const std::shared_ptr<OnlinePlayersData>& data)
+		{ 
+			return data->steam_id == steam_id; 
+		});
 
 	if (iter != online_players_.end())
 	{
@@ -484,7 +472,6 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 
 		for (const auto& data : online_players_)
 		{
-			AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
 			NewPlayerProtection::TimerProt::UpdateTribe(data);
 			NewPlayerProtection::TimerProt::UpdateLevel(data);
 		}
