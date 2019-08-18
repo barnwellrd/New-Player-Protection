@@ -8,6 +8,7 @@
 namespace NewPlayerProtection
 {
 	int PlayerUpdateIntervalInMins;
+	bool IgnoreAdmins;
 	bool AllowNewPlayersToDamageEnemyStructures;
 	bool AllowPlayersToDisableOwnedTribeProtection;
 	FString NPPCommandPrefix;
@@ -27,6 +28,12 @@ namespace NewPlayerProtection
 	FString NPPInfoMessage;
 	FString TribeIDText;
 	FString NoStructureForTribeIDText;
+	FString PVEDisablePlayerMessage;
+	FString PVEStatusMessage;
+	FString AdminPVETribeAddedSuccessMessage;
+	FString AdminPVETribeAlreadyAddedMessage;
+	FString AdminPVETribeRemovedSuccessMessage;
+	FString AdminPVETribeAlreadyRemovedMessage;
 	int MessageIntervalInSecs;
 	float MessageTextSize;
 	float MessageDisplayDelay;
@@ -44,6 +51,9 @@ namespace NewPlayerProtection
 	std::string GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime);
 	std::chrono::time_point<std::chrono::system_clock> GetDateTime(std::string const & timestamp);
 
+	std::vector<uint64> pveTribesList;
+	std::vector<uint64> removedPveTribesList;
+
 	class TimerProt
 	{
 		public:
@@ -56,30 +66,34 @@ namespace NewPlayerProtection
 
 			struct OnlinePlayersData
 			{
-				OnlinePlayersData(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level,
+				OnlinePlayersData(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, 
+					std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level,
 					int isNewPlayer, std::chrono::time_point<std::chrono::system_clock> nextMessageTime)
 					:
-					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), level(level), isNewPlayer(isNewPlayer), nextMessageTime(nextMessageTime)
+					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), lastLoginDateTime(lastLoginDateTime),
+					level(level), isNewPlayer(isNewPlayer), nextMessageTime(nextMessageTime)
 				{}
 				uint64 steam_id;
 				uint64 tribe_id;
 				std::chrono::time_point<std::chrono::system_clock> startDateTime;
+				std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime;
 				int level;
 				int isNewPlayer;
 				std::chrono::time_point<std::chrono::system_clock> nextMessageTime;
-
 			};
 
 			struct AllPlayerData
 			{
-				AllPlayerData(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level,
-				int isNewPlayer) 
+				AllPlayerData(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, 
+					std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level, int isNewPlayer)
 					: 
-					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), level(level), isNewPlayer(isNewPlayer)
+					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), lastLoginDateTime(lastLoginDateTime), 
+					level(level), isNewPlayer(isNewPlayer)
 				{}
 				uint64 steam_id;
 				uint64 tribe_id;
 				std::chrono::time_point<std::chrono::system_clock> startDateTime;
+				std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime;
 				int level;
 				int isNewPlayer;
 			};
@@ -97,12 +111,11 @@ namespace NewPlayerProtection
 
 			void AddOnlinePlayer(uint64 steam_id);
 			void AddNewPlayer(uint64 steam_id, uint64 tribe_id);
-			void AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level, int isNewPlayer);
+			void AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level, int isNewPlayer);
 			void RemovePlayer(uint64 steam_id);
 			bool IsNextMessageReady(uint64 steam_id);
 
-			void UpdateLevel(std::shared_ptr <OnlinePlayersData> data);
-			void UpdateTribe(std::shared_ptr <OnlinePlayersData> data);
+			void UpdateLevelAndTribe(std::shared_ptr <OnlinePlayersData> data);
 
 			std::vector<std::shared_ptr<OnlinePlayersData>> GetOnlinePlayers();
 			std::vector<std::shared_ptr<AllPlayerData>> GetAllPlayers();

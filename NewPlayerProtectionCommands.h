@@ -1,32 +1,9 @@
 #pragma once
 
-inline void ResetStructures(APlayerController* player_controller, FString*, bool)
-{
-	AShooterPlayerController* shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
-		return;
-
-	/**
-	* \brief Finds all Structures owned by team
-	*/
-	TArray<AActor*> AllStructures;
-	UGameplayStatics::GetAllActorsOfClass(reinterpret_cast<UObject*>(ArkApi::GetApiUtils().GetWorld()), APrimalStructure::GetPrivateStaticClass(), &AllStructures);
-
-	for (AActor* StructActor : AllStructures)
-	{
-		if (!StructActor) continue;
-		StructActor = static_cast<APrimalStructure*>(StructActor);
-		APrimalStructure* defaultstruc = static_cast<APrimalStructure*>(StructActor->ClassField()->GetDefaultObject(true));
-		StructActor->bCanBeDamaged() = defaultstruc->bCanBeDamaged().Get();
-	}
-
-	ArkApi::GetApiUtils().SendServerMessage(shooter_controller, FLinearColor(0, 255, 0), "Updated all structures to default!");
-}
-
 inline void Info(AShooterPlayerController* player)
 {
-	ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-		*NewPlayerProtection::NPPInfoMessage, NewPlayerProtection::HoursOfProtection, NewPlayerProtection::MaxLevel);
+		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+			*NewPlayerProtection::NPPInfoMessage, NewPlayerProtection::HoursOfProtection, NewPlayerProtection::MaxLevel);
 }
 
 inline void Disable(AShooterPlayerController* player)
@@ -37,39 +14,49 @@ inline void Disable(AShooterPlayerController* player)
 	//if new player
 	if (IsPlayerProtected(player))
 	{
-		//if tribe admin
-		if (player->IsTribeAdmin())
+		// if not PVE player
+		if (!IsPVETribe(player->TargetingTeamField()))
 		{
-			//remove protection from all tribe members
-			uint64 tribe_id = player->TargetingTeamField();
-
-			auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-			auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
-
-			for (const auto& allData : all_players_)
+			//if tribe admin
+			if (player->IsTribeAdmin())
 			{
-				if (allData->tribe_id == tribe_id)
-				{
-					allData->isNewPlayer = 0;
-				}
-			}
+				//remove protection from all tribe members
+				uint64 tribe_id = player->TargetingTeamField();
 
-			for (const auto& onlineData : online_players_)
-			{
-				if (onlineData->tribe_id == tribe_id)
+				auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+				auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
+
+				for (const auto& allData : all_players_)
 				{
-					onlineData->isNewPlayer = 0;
+					if (allData->tribe_id == tribe_id)
+					{
+						allData->isNewPlayer = 0;
+					}
 				}
+
+				for (const auto& onlineData : online_players_)
+				{
+					if (onlineData->tribe_id == tribe_id)
+					{
+						onlineData->isNewPlayer = 0;
+					}
+				}
+				//display protection removed message
+				ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+					*NewPlayerProtection::NewPlayerProtectionDisableSuccess);
 			}
-			//display protection removed message
-			ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-				*NewPlayerProtection::NewPlayerProtectionDisableSuccess);
+			else //else not tribe admin
+			{
+				//display not tribe admin message
+				ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+					*NewPlayerProtection::NotTribeAdminMessage);
+			}
 		}
-		else //else not tribe admin
+		else // else PVE player
 		{
-			//display not tribe admin message
+			//display PVE protection message
 			ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-				*NewPlayerProtection::NotTribeAdminMessage);
+				*NewPlayerProtection::PVEDisablePlayerMessage);
 		}
 	}
 	else	//else not new player
@@ -85,61 +72,72 @@ inline void Status(AShooterPlayerController* player)
 	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
 		return;
 
-	//if new player
-	if (IsPlayerProtected(player))
+	// if not PVE player
+	if (!IsPVETribe(player->TargetingTeamField()))
 	{
-		//loop through tribe member
-		uint64 tribe_id = player->TargetingTeamField();
-		std::chrono::time_point<std::chrono::system_clock> oldestDate = std::chrono::system_clock::now();
-		int highestLevel = 0;
-
-		auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-
-		//Loop through tribe
-		for (const auto& allData : all_players_)
+		//if new player
+		if (IsPlayerProtected(player))
 		{
-			if (IsAdmin(allData->steam_id))
-			{
-				continue;
-			}
+			//loop through tribe member
+			uint64 tribe_id = player->TargetingTeamField();
+			std::chrono::time_point<std::chrono::system_clock> oldestDate = std::chrono::system_clock::now();
+			int highestLevel = 0;
 
-			if (allData->tribe_id == tribe_id)
+			auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+
+			//Loop through tribe
+			for (const auto& allData : all_players_)
 			{
-				//get oldest date started
-				if (allData->startDateTime < oldestDate)
+
+				if (IsAdmin(allData->steam_id))
 				{
-					oldestDate = allData->startDateTime;
+					continue;
 				}
 
-				//get highest level player
-				if (allData->level > highestLevel)
+				if (allData->tribe_id == tribe_id)
 				{
-					highestLevel = allData->level;
+					//get oldest date started
+					if (allData->startDateTime < oldestDate)
+					{
+						oldestDate = allData->startDateTime;
+					}
+
+					//get highest level player
+					if (allData->level > highestLevel)
+					{
+						highestLevel = allData->level;
+					}
 				}
 			}
+
+			//calulate time
+			auto protectionDaysInHours = std::chrono::hours(NewPlayerProtection::HoursOfProtection);
+			auto now = std::chrono::system_clock::now();
+			auto endTime = now - protectionDaysInHours;
+			auto expireTime = std::chrono::duration_cast<std::chrono::minutes>(oldestDate - endTime);
+			auto daysLeft = expireTime / 1440;
+			auto hoursLeft = ((expireTime - (1440 * daysLeft)) / 60);
+			auto minutesLeft =  (expireTime - ((1440 * daysLeft) + (60 * hoursLeft)));
+
+			//calculate level
+			int levelsLeft = NewPlayerProtection::MaxLevel - highestLevel;
+
+			//display time/level remaining message
+			ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+				*NewPlayerProtection::NPPRemainingMessage, daysLeft.count(), hoursLeft.count(),  minutesLeft.count(), levelsLeft);
 		}
-
-		//calulate time
-		auto protectionDaysInHours = std::chrono::hours(NewPlayerProtection::HoursOfProtection);
-		auto now = std::chrono::system_clock::now();
-		auto endTime = now - protectionDaysInHours;
-		auto expireTime = std::chrono::duration_cast<std::chrono::minutes>(oldestDate - endTime);
-		auto daysLeft = expireTime / 1440;
-		auto hoursLeft = ((expireTime - (1440 * daysLeft)) / 60);
-		auto minutesLeft =  (expireTime - ((1440 * daysLeft) + (60 * hoursLeft)));
-
-		//calculate level
-		int levelsLeft = NewPlayerProtection::MaxLevel - highestLevel;
-
-		//display time/level remaining message
-		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-			*NewPlayerProtection::NPPRemainingMessage, daysLeft.count(), hoursLeft.count(),  minutesLeft.count(), levelsLeft);
+		else//else not new player
+		{
+			//display not under protection message
+			ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+				*NewPlayerProtection::NotANewPlayerMessage);
+		}
 	}
-	else//else not new player
+	else // is pve tribe
 	{
-		//display not under protection message
+		// pve status notification
 		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-			*NewPlayerProtection::NotANewPlayerMessage);
+			*NewPlayerProtection::PVEStatusMessage);
 	}
 }
 
@@ -156,9 +154,7 @@ inline void GetTribeID(AShooterPlayerController* player)
 		APrimalStructure* Structure = static_cast<APrimalStructure*>(Actor);
 		const int teamId = Structure->TargetingTeamField();
 		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-			*NewPlayerProtection::TribeIDText, teamId);
-	
-		
+			*NewPlayerProtection::TribeIDText, teamId);	
 	}
 	else
 	{
@@ -295,7 +291,7 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 	}
 }
 
-inline void ConsoleResetProtectionDays(APlayerController* player, FString* cmd, bool boolean)
+inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool boolean)
 {
 	const auto shooter_controller = static_cast<AShooterPlayerController*>(player);
 
@@ -331,10 +327,12 @@ inline void ConsoleResetProtectionDays(APlayerController* player, FString* cmd, 
 		{
 			if (allData->tribe_id == tribe_id)
 			{
+
 				if (IsAdmin(allData->steam_id))
 				{
 					continue;
 				}
+
 				found = true;
 				if (allData->level > NewPlayerProtection::MaxLevel)
 				{
@@ -355,6 +353,7 @@ inline void ConsoleResetProtectionDays(APlayerController* player, FString* cmd, 
 				//loop through tribe members
 				for (const auto& allData : all_players_)
 				{
+					
 					if (IsAdmin(allData->steam_id))
 					{
 						continue;
@@ -370,6 +369,7 @@ inline void ConsoleResetProtectionDays(APlayerController* player, FString* cmd, 
 
 				for (const auto& onlineData : online_players_)
 				{
+
 					if (IsAdmin(onlineData->steam_id))
 					{
 						continue;
@@ -386,6 +386,124 @@ inline void ConsoleResetProtectionDays(APlayerController* player, FString* cmd, 
 				//display protection added message
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 					*NewPlayerProtection::AdminResetTribeProtectionSuccess, NewPlayerProtection::HoursOfProtection, tribe_id);
+			}
+			else //tribe not under max level
+			{
+				//display tribe under max level message
+				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+					*NewPlayerProtection::AdminResetTribeProtectionLvlFailure, tribe_id);
+			}
+		}
+		else // tribe not found
+		{
+			//display tribe not found
+			ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+				*NewPlayerProtection::AdminNoTribeExistsMessage, tribe_id);
+		}
+	}
+}
+
+inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool boolean)
+{
+	const auto shooter_controller = static_cast<AShooterPlayerController*>(player);
+
+	//if Admin
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
+		return;
+
+	bool found = false;
+	bool underMaxLevel = true;
+
+	//parse command
+	TArray<FString> parsed;
+	cmd->ParseIntoArray(parsed, L" ", true);
+
+	if (parsed.IsValidIndex(1) && parsed.IsValidIndex(2))
+	{
+		uint64 tribe_id = 0;
+		uint64 hours = 0;
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+			hours = std::stoull(*parsed[2]);
+			if (hours < 1)
+			{
+				throw;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return;
+		}
+
+		auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+
+		//look for tribe
+		for (const auto& allData : all_players_)
+		{
+			if (allData->tribe_id == tribe_id)
+			{
+
+				if (IsAdmin(allData->steam_id))
+				{
+					continue;
+				}
+
+				found = true;
+				if (allData->level > NewPlayerProtection::MaxLevel)
+				{
+					underMaxLevel = false;
+					break;
+				}
+			}
+		}
+		//if tribe found
+		if (found)
+		{
+			//if tribe is under max level
+			if (underMaxLevel)
+			{
+				auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
+				auto now = std::chrono::system_clock::now();
+
+				//loop through tribe members
+				for (const auto& allData : all_players_)
+				{
+					
+					if (IsAdmin(allData->steam_id))
+					{
+						continue;
+					}
+
+					//add protection & increase start date
+					if (allData->tribe_id == tribe_id)
+					{
+						allData->isNewPlayer = 1;
+						allData->startDateTime = now += std::chrono::hours(hours);
+					}
+				}
+
+				for (const auto& onlineData : online_players_)
+				{
+
+					if (IsAdmin(onlineData->steam_id))
+					{
+						continue;
+					}
+
+					//add protection & increase start date
+					if (onlineData->tribe_id == tribe_id)
+					{
+						onlineData->isNewPlayer = 1;
+						onlineData->startDateTime = now += std::chrono::hours(hours);
+					}
+				}
+
+				//display protection added message
+				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+					*NewPlayerProtection::AdminResetTribeProtectionSuccess, hours, tribe_id);
 			}
 			else //tribe not under max level
 			{
@@ -487,7 +605,7 @@ inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPack
 	}
 }
 
-inline void RconResetProtectionDays(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
 {
 	FString reply;
 
@@ -517,6 +635,7 @@ inline void RconResetProtectionDays(RCONClientConnection* rcon_connection, RCONP
 		//look for tribe
 		for (const auto& allData : all_players_)
 		{
+
 			if (IsAdmin(allData->steam_id))
 			{
 				continue;
@@ -544,6 +663,7 @@ inline void RconResetProtectionDays(RCONClientConnection* rcon_connection, RCONP
 				//loop through tribe members
 				for (const auto& allData : all_players_)
 				{
+
 					if (IsAdmin(allData->steam_id))
 					{
 						continue;
@@ -559,6 +679,7 @@ inline void RconResetProtectionDays(RCONClientConnection* rcon_connection, RCONP
 
 				for (const auto& onlineData : online_players_)
 				{
+
 					if (IsAdmin(onlineData->steam_id))
 					{
 						continue;
@@ -579,6 +700,364 @@ inline void RconResetProtectionDays(RCONClientConnection* rcon_connection, RCONP
 			{
 				//display tribe under max level message
 				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminResetTribeProtectionLvlFailure, tribe_id));
+			}
+		}
+		else // tribe not found
+		{
+			//display tribe not found
+			rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminNoTribeExistsMessage, tribe_id));
+		}
+	}
+}
+
+inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+{
+	FString reply;
+
+	bool found = false;
+	bool underMaxLevel = true;
+
+	//parse command
+	TArray<FString> parsed;
+	rcon_packet->Body.ParseIntoArray(parsed, L" ", true);
+
+	if (parsed.IsValidIndex(1) && parsed.IsValidIndex(2))
+	{
+		uint64 tribe_id = 0;
+		uint64 hours = 0;
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+			hours = std::stoull(*parsed[2]);
+			if (hours < 1)
+			{
+				throw;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return;
+		}
+
+		auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+
+		//look for tribe
+		for (const auto& allData : all_players_)
+		{
+			if (allData->tribe_id == tribe_id)
+			{
+
+				if (IsAdmin(allData->steam_id))
+				{
+					continue;
+				}
+
+				found = true;
+				if (allData->level > NewPlayerProtection::MaxLevel)
+				{
+					underMaxLevel = false;
+					break;
+				}
+			}
+		}
+		//if tribe found
+		if (found)
+		{
+			//if tribe is under max level
+			if (underMaxLevel)
+			{
+				auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
+				auto now = std::chrono::system_clock::now();
+
+				//loop through tribe members
+				for (const auto& allData : all_players_)
+				{
+
+					if (IsAdmin(allData->steam_id))
+					{
+						continue;
+					}
+
+					//add protection & increase start date
+					if (allData->tribe_id == tribe_id)
+					{
+						allData->isNewPlayer = 1;
+						allData->startDateTime = now += std::chrono::hours(hours);
+					}
+				}
+
+				for (const auto& onlineData : online_players_)
+				{
+
+					if (IsAdmin(onlineData->steam_id))
+					{
+						continue;
+					}
+
+					//add protection & increase start date
+					if (onlineData->tribe_id == tribe_id)
+					{
+						onlineData->isNewPlayer = 1;
+						onlineData->startDateTime = now += std::chrono::hours(hours);
+					}
+				}
+
+				//display protection added message
+				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminResetTribeProtectionSuccess, hours, tribe_id));
+			}
+			else //tribe not under max level
+			{
+				//display tribe under max level message
+				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminResetTribeProtectionLvlFailure, tribe_id));
+			}
+		}
+		else // tribe not found
+		{
+			//display tribe not found
+			rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminNoTribeExistsMessage, tribe_id));
+		}
+	}
+}
+
+inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
+{
+	const auto shooter_controller = static_cast<AShooterPlayerController*>(player);
+
+	//if Admin
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
+		return;
+
+	bool found = false;
+
+	//parse command
+	TArray<FString> parsed;
+	cmd->ParseIntoArray(parsed, L" ", true);
+
+	if (parsed.IsValidIndex(1) && parsed.IsValidIndex(2))
+	{
+		uint64 tribe_id = 0;
+		int setToPve = 0;
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+			setToPve = std::stoull(*parsed[2]);
+			if (setToPve < 0 || setToPve > 1)
+			{
+				throw;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return;
+		}
+
+		auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+
+		//look for tribe
+		for (const auto& allData : all_players_)
+		{
+			if (allData->tribe_id == tribe_id)
+			{
+
+				if (IsAdmin(allData->steam_id))
+				{
+					continue;
+				}
+
+				found = true;
+			}
+		}
+		//if tribe found
+		if (found)
+		{
+			if (setToPve == 1)
+			{
+				if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribe_id) < 1)
+				{
+					NewPlayerProtection::pveTribesList.push_back(tribe_id);
+
+					if (std::count(NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(), tribe_id) > 0)
+					{
+						const auto iter = std::find_if(
+							NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(),
+							[tribe_id](const uint64 data)
+							{
+								return data == tribe_id;
+							});
+
+						if (iter != NewPlayerProtection::removedPveTribesList.end())
+						{
+							NewPlayerProtection::removedPveTribesList.erase(std::remove(NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(), *iter), NewPlayerProtection::removedPveTribesList.end());
+						}
+					}
+
+					//display pve tribe added message
+					ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+						*NewPlayerProtection::AdminPVETribeAddedSuccessMessage, tribe_id);
+				}
+				else
+				{
+					//display pve tribe already set message
+					ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+						*NewPlayerProtection::AdminPVETribeAlreadyAddedMessage, tribe_id);
+				}
+			}
+			else
+			{
+				if (std::count(NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(), tribe_id) < 1)
+				{
+					NewPlayerProtection::removedPveTribesList.push_back(tribe_id);
+
+					if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribe_id) > 0)
+					{
+						const auto iter = std::find_if(
+							NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(),
+							[tribe_id](const uint64 data)
+							{
+								return data == tribe_id;
+							});
+
+						if (iter != NewPlayerProtection::pveTribesList.end())
+						{
+							NewPlayerProtection::pveTribesList.erase(std::remove(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), *iter), NewPlayerProtection::pveTribesList.end());
+						}
+					}
+
+					//display tribe under max level message
+					ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+						*NewPlayerProtection::AdminPVETribeRemovedSuccessMessage, tribe_id);
+				}
+				else
+				{
+					//display tribe under max level message
+					ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+						*NewPlayerProtection::AdminPVETribeAlreadyRemovedMessage, tribe_id);
+				}
+			}
+		}
+		else // tribe not found
+		{
+			//display tribe not found
+			ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+				*NewPlayerProtection::AdminNoTribeExistsMessage, tribe_id);
+		}
+	}
+
+}
+
+inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+{
+	FString reply;
+
+	bool found = false;
+
+	//parse command
+	TArray<FString> parsed;
+	rcon_packet->Body.ParseIntoArray(parsed, L" ", true);
+
+	if (parsed.IsValidIndex(1) && parsed.IsValidIndex(2))
+	{
+		uint64 tribe_id = 0;
+		int setToPve = 0;
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+			setToPve = std::stoull(*parsed[2]);
+			if (setToPve < 0 || setToPve > 1)
+			{
+				throw;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return;
+		}
+
+		auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+
+		//look for tribe
+		for (const auto& allData : all_players_)
+		{
+			if (allData->tribe_id == tribe_id)
+			{
+
+				if (IsAdmin(allData->steam_id))
+				{
+					continue;
+				}
+
+				found = true;
+			}
+		}
+		//if tribe found
+		if (found)
+		{
+
+			if (setToPve == 1)
+			{
+				if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribe_id) < 1)
+				{
+					NewPlayerProtection::pveTribesList.push_back(tribe_id);
+
+					if (std::count(NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(), tribe_id) > 0)
+					{
+						const auto iter = std::find_if(
+							NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(),
+							[tribe_id](const uint64 data)
+						{
+							return data == tribe_id;
+						});
+
+						if (iter != NewPlayerProtection::removedPveTribesList.end())
+						{
+							NewPlayerProtection::removedPveTribesList.erase(std::remove(NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(), *iter), NewPlayerProtection::removedPveTribesList.end());
+						}
+					}
+
+					//display pve tribe added message
+					rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminPVETribeAddedSuccessMessage, tribe_id));
+				}
+				else
+				{
+					//display pve tribe already set message
+					rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminPVETribeAlreadyAddedMessage, tribe_id));
+				}
+			}
+			else
+			{
+				if (std::count(NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(), tribe_id) < 1)
+				{
+					NewPlayerProtection::removedPveTribesList.push_back(tribe_id);
+
+					if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribe_id) > 0)
+					{
+						const auto iter = std::find_if(
+							NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(),
+							[tribe_id](const uint64 data)
+						{
+							return data == tribe_id;
+						});
+
+						if (iter != NewPlayerProtection::pveTribesList.end())
+						{
+							NewPlayerProtection::pveTribesList.erase(std::remove(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), *iter), NewPlayerProtection::pveTribesList.end());
+						}
+
+						//display tribe under max level message
+						rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminPVETribeRemovedSuccessMessage, tribe_id));
+					}
+					else
+					{
+						//display tribe under max level message
+						rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminPVETribeAlreadyRemovedMessage, tribe_id));
+					}
+				}
 			}
 		}
 		else // tribe not found
@@ -639,24 +1118,29 @@ inline void RconReloadConfig(RCONClientConnection* rcon_connection, RCONPacket* 
 inline void InitCommands()
 {
 	InitChatCommands();
-	ArkApi::GetCommands().AddConsoleCommand("NPP.ResetStructures", &ResetStructures);
 	ArkApi::GetCommands().AddConsoleCommand("NPP.RemoveProtection", &ConsoleRemoveProtection);
-	ArkApi::GetCommands().AddConsoleCommand("NPP.ResetProtectionDays", &ConsoleResetProtectionDays);
-	ArkApi::GetCommands().AddRconCommand("NPP.RemoveProtection", &RconRemoveProtection);
-	ArkApi::GetCommands().AddRconCommand("NPP.ResetProtectionDays", &RconResetProtectionDays);
-	ArkApi::GetCommands().AddConsoleCommand("NPP.ReloadConfig", &ConsoleReloadConfig);
-	ArkApi::GetCommands().AddRconCommand("NPP.ReloadConfig", &RconReloadConfig);
+	ArkApi::GetCommands().AddRconCommand("NPP.RemoveProtection",	&RconRemoveProtection);
+	ArkApi::GetCommands().AddConsoleCommand("NPP.ResetProtection",	&ConsoleResetProtection);
+	ArkApi::GetCommands().AddRconCommand("NPP.ResetProtection",		&RconResetProtection);
+	ArkApi::GetCommands().AddConsoleCommand("NPP.AddProtection",	&ConsoleAddProtection);
+	ArkApi::GetCommands().AddRconCommand("NPP.AddProtection",		&RconAddProtection);
+	ArkApi::GetCommands().AddConsoleCommand("NPP.ReloadConfig",		&ConsoleReloadConfig);
+	ArkApi::GetCommands().AddRconCommand("NPP.ReloadConfig",		&RconReloadConfig);
+	ArkApi::GetCommands().AddConsoleCommand("NPP.SetPVE",			&ConsoleSetPVE);
+	ArkApi::GetCommands().AddRconCommand("NPP.SetPVE",				&RconSetPVE);
 }
 
 inline void RemoveCommands()
 {	
 	RemoveChatCommands();
-	ArkApi::GetCommands().RemoveConsoleCommand("NPP.ResetStructures");
 	ArkApi::GetCommands().RemoveConsoleCommand("NPP.RemoveProtection");
-	ArkApi::GetCommands().RemoveConsoleCommand("NPP.ResetProtectionDays");
+	ArkApi::GetCommands().RemoveConsoleCommand("NPP.ResetProtection");
+	ArkApi::GetCommands().RemoveConsoleCommand("NPP.AddProtection");
 	ArkApi::GetCommands().RemoveRconCommand("NPP.RemoveProtection");
-	ArkApi::GetCommands().RemoveRconCommand("NPP.ResetProtectionDays");
+	ArkApi::GetCommands().RemoveRconCommand("NPP.ResetProtection");
 	ArkApi::GetCommands().RemoveConsoleCommand("NPP.ReloadConfig");
 	ArkApi::GetCommands().RemoveRconCommand("NPP.ReloadConfig");
+	ArkApi::GetCommands().RemoveConsoleCommand("NPP.SetPVE");
+	ArkApi::GetCommands().RemoveRconCommand("NPP.SetPVE");
 }
 

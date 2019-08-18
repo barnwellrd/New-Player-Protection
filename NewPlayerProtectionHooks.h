@@ -23,39 +23,77 @@ void RemoveHooks()
 
 bool IsAdmin(uint64 steam_id)
 {
-	return Permissions::IsPlayerInGroup(steam_id, "Admins");
+	if (NewPlayerProtection::IgnoreAdmins)
+	{
+		return Permissions::IsPlayerInGroup(steam_id, "Admins");
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool IsPlayerExists(uint64 steam_id)
 {
 	int exists = 0;
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-	for (const auto& data : all_players_)
-	{
-		if (data->steam_id == steam_id)
+
+	const auto iter = std::find_if(
+		all_players_.begin(), all_players_.end(),
+		[steam_id](const std::shared_ptr<NewPlayerProtection::TimerProt::AllPlayerData>& data)
 		{
-			return 1;
-		}
+			return data->steam_id == steam_id;
+		});
+
+	if (iter != all_players_.end())
+	{
+		exists = 1;
 	}
 	return exists;
 }
 
 bool IsTribeProtected(uint64 tribeid)
 {
-	int isProtected = 0;
-	if (tribeid < 100000)
+	bool isProtected = 0;
+	if (tribeid > 100000)
 	{
-		return isProtected;
-	}
-	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-	for (const auto& data : all_players_)
-	{
-		if (data->tribe_id == tribeid && data->isNewPlayer == 1 && !IsAdmin(data->steam_id))
+		if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribeid) < 1)
 		{
-			return 1;
+			//potentially check a vector of tribes that lists whether they are protected or not
+
+			auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+			const auto iter = std::find_if(
+				all_players_.begin(), all_players_.end(),
+				[tribeid](const std::shared_ptr<NewPlayerProtection::TimerProt::AllPlayerData>& data)
+				{
+					return (data->tribe_id == tribeid && data->isNewPlayer == 1);
+				});
+
+			if (iter != all_players_.end())
+			{
+				isProtected = 1;
+				return isProtected;
+			}
+		}
+		else
+		{
+			isProtected = 1;
+			return isProtected;
 		}
 	}
 	return isProtected;
+}
+
+bool IsPVETribe(uint64 tribeid)
+{
+	int isPve = 0;
+
+	if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribeid) > 0)
+	{
+		isPve = 1;
+		return isPve;
+	}
+	return isPve;
 }
 
 void RemoveExpiredTribesProtection()
@@ -68,8 +106,14 @@ void RemoveExpiredTribesProtection()
 
 	for (const auto& allData : all_players_)
 	{
-		//check all players for expired
+		//check all players for expired protection
 		auto diff = std::chrono::duration_cast<std::chrono::seconds>(allData->startDateTime - endTime);
+
+
+		if (IsPVETribe(allData->tribe_id))
+		{
+			continue;
+		}
 
 		if (diff.count() <= 0 || allData->level >= NewPlayerProtection::MaxLevel || allData->isNewPlayer == 0)
 		{
@@ -109,46 +153,72 @@ void RemoveExpiredTribesProtection()
 	}
 }
 
-int IsPlayerProtected(APlayerController * PC)
+bool IsPlayerProtected(APlayerController * PC)
 {
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(PC);
 	int isProtected = 0;
 	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
-	for (const auto& data : online_players_)
-	{
-		if (data->steam_id == steam_id)
+
+	const auto iter = std::find_if(
+		online_players_.begin(), online_players_.end(),
+		[steam_id](const std::shared_ptr<NewPlayerProtection::TimerProt::OnlinePlayersData>& data)
 		{
-			return data->isNewPlayer;
-		}
+			return (data->steam_id == steam_id && data->isNewPlayer == 1);
+		});
+
+	if (iter != online_players_.end())
+	{
+		isProtected = 1;
+		return isProtected;
 	}
+
 	return isProtected;
 }
 
-uint64 GetMaxUnknownTribeId()
-{
-	uint64 tribeid = 0;
-	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-	std::vector<uint64> tribe_ids;
-
-	for (const auto& data : all_players_)
-	{
-		if (data->tribe_id < 99999 && tribeid < data->tribe_id)
-		{
-				tribeid = data->tribe_id;
-		}
-	}
-	return tribeid+1;
-}
-
-void UpdateDB(std::shared_ptr<NewPlayerProtection::TimerProt::AllPlayerData> data)
+void UpdatePlayerDB(std::shared_ptr<NewPlayerProtection::TimerProt::AllPlayerData> data)
 {
 	auto& db = NewPlayerProtection::GetDB();
 
 	try
 	{
-		db << "INSERT OR REPLACE INTO Players(SteamId, TribeId, Start_DateTime, Level, Is_New_Player) VALUES(?,?,?,?,?);"
-			<< data->steam_id << data->tribe_id << NewPlayerProtection::GetTimestamp(data->startDateTime) << data->level << data->isNewPlayer;
+		db << "INSERT OR REPLACE INTO Players(SteamId, TribeId, Start_DateTime, Last_Login_DateTime, Level, Is_New_Player) VALUES(?,?,?,?,?,?);"
+			<< data->steam_id << data->tribe_id << NewPlayerProtection::GetTimestamp(data->startDateTime)<< NewPlayerProtection::GetTimestamp(data->lastLoginDateTime) << data->level << data->isNewPlayer;
 
+	}
+	catch (const sqlite::sqlite_exception& exception)
+	{
+		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+	}
+}
+
+void UpdatePVETribeDB(uint64 tribe_id, bool stillProtected)
+{
+	auto& db = NewPlayerProtection::GetDB();
+
+	try
+	{
+		db << "INSERT OR REPLACE INTO PVE_Tribes(TribeId, Is_Protected) VALUES(?,?);"
+			<< tribe_id << stillProtected;
+
+		if (!stillProtected)
+		{
+			NewPlayerProtection::removedPveTribesList.clear();
+			NewPlayerProtection::pveTribesList.clear();
+
+			try
+			{
+				auto res = db << "SELECT TribeId FROM PVE_Tribes where Is_Protected = 1;";
+
+				res >> [](uint64 tribeid)
+				{
+					NewPlayerProtection::pveTribesList.push_back(tribeid);
+				};
+			}
+			catch (const sqlite::sqlite_exception& exception)
+			{
+				Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			}
+		}
 	}
 	catch (const sqlite::sqlite_exception& exception)
 	{
@@ -165,14 +235,6 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 	{
 		AShooterPlayerState* ASPS = static_cast<AShooterPlayerState*>(new_player->PlayerStateField());
 		team_id = ASPS->TargetingTeamField();
-
-		if (team_id == 0)
-		{
-			team_id = GetMaxUnknownTribeId();
-
-			if (team_id == 0)
-				team_id = 100000;
-		}
 
 		NewPlayerProtection::TimerProt::Get().AddNewPlayer(steam_id, team_id);
 	}
@@ -192,10 +254,22 @@ void Hook_AShooterGameMode_Logout(AShooterGameMode* _this, AController* exiting)
 bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 	bool result = AShooterGameMode_SaveWorld_original(GameMode);
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+
 	for (const auto& data : all_players_)
 	{
-		UpdateDB(data);
+		UpdatePlayerDB(data);
 	}
+
+	for (const auto& tribe_id : NewPlayerProtection::pveTribesList)
+	{
+		UpdatePVETribeDB(tribe_id, 1);
+	}
+
+	for (const auto& tribe_id : NewPlayerProtection::removedPveTribesList)
+	{
+		UpdatePVETribeDB(tribe_id, 0);
+	}
+
 	return result;
 }
 
@@ -298,19 +372,10 @@ NewPlayerProtection::TimerProt& NewPlayerProtection::TimerProt::Get()
 	return instance;
 }
 
-void NewPlayerProtection::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, int level, int isNewPlayer)
+void NewPlayerProtection::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, 
+	std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level, int isNewPlayer)
 {
-	const auto iter = std::find_if(
-		all_players_.begin(), all_players_.end(),
-		[steam_id](const std::shared_ptr<AllPlayerData>& data)
-		{ 
-			return data->steam_id == steam_id; 
-		});
-
-	if (iter != all_players_.end())
-		return;
-
-	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, startDateTime, level, isNewPlayer));
+	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, startDateTime, lastLoginDateTime, level, isNewPlayer));
 }
 
 void NewPlayerProtection::TimerProt::AddNewPlayer(uint64 steam_id, uint64 tribe_id)
@@ -319,13 +384,13 @@ void NewPlayerProtection::TimerProt::AddNewPlayer(uint64 steam_id, uint64 tribe_
 		all_players_.begin(), all_players_.end(),
 		[steam_id](const std::shared_ptr<AllPlayerData>& data)
 		{ 
-			return data->steam_id == steam_id; 
+			return data->steam_id == steam_id;
 		});
 
 	if (iter != all_players_.end())
 		return;
 	bool isNewPlayer = !IsAdmin(steam_id);
-	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, std::chrono::system_clock::now(), 1, isNewPlayer));
+	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, std::chrono::system_clock::now(), std::chrono::system_clock::now(), 1, isNewPlayer));
 }
 
 void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
@@ -342,6 +407,7 @@ void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
 
 	uint64 tribeid;
 	std::chrono::time_point<std::chrono::system_clock> startDateTime;
+	std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime = std::chrono::system_clock::now();
 	int level;
 	int isNewPlayer;
 	std::chrono::time_point<std::chrono::system_clock> nextMessageTime = std::chrono::system_clock::now();
@@ -352,6 +418,7 @@ void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
 		{
 			tribeid = alldata->tribe_id;
 			startDateTime = alldata->startDateTime;
+			alldata->lastLoginDateTime = lastLoginDateTime;
 			level = alldata->level;
 			isNewPlayer = alldata->isNewPlayer;
 			alldata->level = level;
@@ -359,7 +426,7 @@ void NewPlayerProtection::TimerProt::AddOnlinePlayer(uint64 steam_id)
 		}
 	}
 
-	online_players_.push_back(std::make_shared<OnlinePlayersData>(steam_id, tribeid, startDateTime, level, isNewPlayer, nextMessageTime));
+	online_players_.push_back(std::make_shared<OnlinePlayersData>(steam_id, tribeid, startDateTime, lastLoginDateTime, level, isNewPlayer, nextMessageTime));
 }
 
 void NewPlayerProtection::TimerProt::RemovePlayer(uint64 steam_id)
@@ -400,31 +467,7 @@ bool NewPlayerProtection::TimerProt::IsNextMessageReady(uint64 steam_id)
 	return true;
 }
 
-void NewPlayerProtection::TimerProt::UpdateLevel(std::shared_ptr<OnlinePlayersData> data)
-{
-	AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
-
-	if (ArkApi::IApiUtils::IsPlayerDead(player))
-	{
-		return;
-	}
-
-	APlayerState* player_state = player->PlayerStateField();
-	AShooterPlayerState* shooter_player_state = static_cast<AShooterPlayerState*>(player_state);
-	int level = shooter_player_state->MyPlayerDataStructField()->MyPersistentCharacterStatsField()->CharacterStatusComponent_HighestExtraCharacterLevelField() + 1;
-	data->level = level;
-
-	for (const auto& alldata : all_players_)
-	{
-		if (alldata->steam_id == data->steam_id)
-		{
-			alldata->level = level;
-			break;
-		}
-	}
-}
-
-void NewPlayerProtection::TimerProt::UpdateTribe(std::shared_ptr<OnlinePlayersData> data)
+void NewPlayerProtection::TimerProt::UpdateLevelAndTribe(std::shared_ptr<OnlinePlayersData> data)
 {
 	AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
 
@@ -436,6 +479,9 @@ void NewPlayerProtection::TimerProt::UpdateTribe(std::shared_ptr<OnlinePlayersDa
 	APlayerState* player_state = player->PlayerStateField();
 	AShooterPlayerState* shooter_player_state = static_cast<AShooterPlayerState*>(player_state);
 	uint64 tribe_id = shooter_player_state->TargetingTeamField();
+	int level = shooter_player_state->MyPlayerDataStructField()->MyPersistentCharacterStatsField()->CharacterStatusComponent_HighestExtraCharacterLevelField() + 1;
+
+	data->level = level;
 	data->tribe_id = tribe_id;
 
 
@@ -443,6 +489,7 @@ void NewPlayerProtection::TimerProt::UpdateTribe(std::shared_ptr<OnlinePlayersDa
 	{
 		if (alldata->steam_id == data->steam_id)
 		{
+			alldata->level = level;
 			alldata->tribe_id = tribe_id;
 			break;
 		}
@@ -472,8 +519,7 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 
 		for (const auto& data : online_players_)
 		{
-			NewPlayerProtection::TimerProt::UpdateTribe(data);
-			NewPlayerProtection::TimerProt::UpdateLevel(data);
+			NewPlayerProtection::TimerProt::UpdateLevelAndTribe(data);
 		}
 		RemoveExpiredTribesProtection();
 	}

@@ -2,6 +2,7 @@
   "General": {
     "DbPathOverride": "",
     "PlayerUpdateIntervalInMins": 1,
+    "IgnoreAdmins": false,
     "AllowNewPlayersToDamageEnemyStructures": false,
     "AllowPlayersToDisableOwnedTribeProtection": true,
     "NPPCommandPrefix": "!",
@@ -21,6 +22,12 @@
     "NPPInfoMessage": "NPP Server Settings: Hours of Protection: {}, Max New Player Level: {}.",
     "TribeIDText": "Target structure's Tribe ID: {}.",
     "NoStructureForTribeIDText": "Please face the middle of your screen towards the structure you want to retrieve the Tribe ID from.",
+    "PVEDisablePlayerMessage": "PVE player can not disable their own protection",
+    "PVEStatusMessage": "Your tribe is a PVE tribe",
+    "AdminPVETribeAddedSuccessMessage": "Successfully added to PVE Tribes: {}",
+    "AdminPVETribeAlreadyAddedMessage": "Tribe was already added to PVE Tribes: {}",
+    "AdminPVETribeRemovedSuccessMessage": "Successfully removed from PVE Tribes: {}",
+    "AdminPVETribeAlreadyRemovedMessage": "Tribe was already removed from PVE Tribes: {}",
 
     "MessageIntervalInSecs": 10,
     "MessageTextSize": 1.4,
