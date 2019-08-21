@@ -83,7 +83,7 @@ void LoadDB()
 	try
 	{
 		std::string hours = "'-";
-		hours.append(std::to_string(NewPlayerProtection::HoursOfProtection * 3));
+		hours.append(std::to_string(NewPlayerProtection::NPPPlayerDecayInHours));
 		hours.append(" hour'");
 
 		auto res = db << "SELECT * FROM Players where Last_Login_DateTime > date('now', ? );"
@@ -131,6 +131,7 @@ inline void LoadConfig()
 	NewPlayerProtection::PlayerUpdateIntervalInMins = NewPlayerProtection::config["General"]["PlayerUpdateIntervalInMins"];
 	NewPlayerProtection::IgnoreAdmins = NewPlayerProtection::config["General"]["IgnoreAdmins"];
 	NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures = NewPlayerProtection::config["General"]["AllowNewPlayersToDamageEnemyStructures"];
+	NewPlayerProtection::NPPPlayerDecayInHours = NewPlayerProtection::config["General"]["NPPPlayerDecayInHours"];
 	NewPlayerProtection::NPPCommandPrefix = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPCommandPrefix"]).c_str());
 	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
 	NewPlayerProtection::HoursOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["HoursOfProtection"];

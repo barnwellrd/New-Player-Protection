@@ -11,6 +11,7 @@ namespace NewPlayerProtection
 	bool IgnoreAdmins;
 	bool AllowNewPlayersToDamageEnemyStructures;
 	bool AllowPlayersToDisableOwnedTribeProtection;
+	int NPPPlayerDecayInHours;
 	FString NPPCommandPrefix;
 	FString NewPlayerDoingDamageMessage;
 	FString NewPlayerStructureTakingDamageMessage;

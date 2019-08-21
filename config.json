@@ -2,9 +2,10 @@
   "General": {
     "DbPathOverride": "",
     "PlayerUpdateIntervalInMins": 1,
-    "IgnoreAdmins": false,
+    "IgnoreAdmins": true,
     "AllowNewPlayersToDamageEnemyStructures": false,
     "AllowPlayersToDisableOwnedTribeProtection": true,
+    "NPPPlayerDecayInHours":384,
     "NPPCommandPrefix": "!",
     "NewPlayerDoingDamageMessage": "You can't attack structures while under New Player Protection!",
     "NewPlayerStructureTakingDamageMessage": "You can't attack structures that are under New Player Protection!",
