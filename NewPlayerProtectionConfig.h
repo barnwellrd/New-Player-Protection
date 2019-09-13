@@ -89,7 +89,7 @@ void LoadDB()
 		auto res = db << "SELECT * FROM Players where Last_Login_DateTime > date('now', ? );"
 			<< hours;
 
-		res >> [](uint64 steamid, uint64 tribeid, std::string const & startdate, std::string const & lastlogindate, int level, int isnewplayer)
+		res >> [](uint64 steamid, uint64 tribeid, std::string startdate, std::string lastlogindate, int level, int isnewplayer)
 		{
 			NewPlayerProtection::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NewPlayerProtection::GetDateTime(startdate), NewPlayerProtection::GetDateTime(lastlogindate),level, isnewplayer);
 		};

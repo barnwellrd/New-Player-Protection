@@ -57,7 +57,7 @@ bool IsTribeProtected(uint64 tribeid)
 	bool isProtected = 0;
 	if (tribeid > 100000)
 	{
-		if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribeid) < 1)
+		if (!IsPVETribe(tribeid))
 		{
 			//potentially check a vector of tribes that lists whether they are protected or not
 
@@ -66,7 +66,10 @@ bool IsTribeProtected(uint64 tribeid)
 				all_players_.begin(), all_players_.end(),
 				[tribeid](const std::shared_ptr<NewPlayerProtection::TimerProt::AllPlayerData>& data)
 				{
-					return (data->tribe_id == tribeid && data->isNewPlayer == 1);
+					if (!IsAdmin(data->steam_id))
+					{
+						return (data->tribe_id == tribeid && data->isNewPlayer == 1);
+					}
 				});
 
 			if (iter != all_players_.end())
@@ -126,7 +129,10 @@ void RemoveExpiredTribesProtection()
 				{
 					if (allData->tribe_id == moreAllData->tribe_id)
 					{
-						moreAllData->isNewPlayer = 0;
+						if (!IsAdmin(allData->steam_id))
+						{
+							moreAllData->isNewPlayer = 0;
+						}
 					}
 				}
 
@@ -135,7 +141,10 @@ void RemoveExpiredTribesProtection()
 				{
 					if (allData->steam_id == onlineData->steam_id || allData->tribe_id == onlineData->tribe_id)
 					{
-						onlineData->isNewPlayer = 0;
+						if (!IsAdmin(onlineData->steam_id))
+						{
+							onlineData->isNewPlayer = 0;
+						}
 					}
 				}
 			}
@@ -159,19 +168,16 @@ bool IsPlayerProtected(APlayerController * PC)
 	int isProtected = 0;
 	auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
 
-	const auto iter = std::find_if(
-		online_players_.begin(), online_players_.end(),
-		[steam_id](const std::shared_ptr<NewPlayerProtection::TimerProt::OnlinePlayersData>& data)
-		{
-			return (data->steam_id == steam_id && data->isNewPlayer == 1);
-		});
-
-	if (iter != online_players_.end())
+	for (const auto& data : online_players_)
 	{
-		isProtected = 1;
-		return isProtected;
+		if (data->steam_id == steam_id)
+		{
+			if (!IsAdmin(data->steam_id))
+			{
+				return data->isNewPlayer;
+			}
+		}
 	}
-
 	return isProtected;
 }
 
@@ -375,6 +381,17 @@ NewPlayerProtection::TimerProt& NewPlayerProtection::TimerProt::Get()
 void NewPlayerProtection::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, 
 	std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level, int isNewPlayer)
 {
+
+	const auto iter = std::find_if(
+		all_players_.begin(), all_players_.end(),
+		[steam_id](const std::shared_ptr<AllPlayerData>& data)
+		{
+			return data->steam_id == steam_id;
+		});
+
+	if (iter != all_players_.end())
+		return;
+
 	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, startDateTime, lastLoginDateTime, level, isNewPlayer));
 }
 

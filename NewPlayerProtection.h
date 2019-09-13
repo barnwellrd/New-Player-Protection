@@ -50,7 +50,7 @@ namespace NewPlayerProtection
 	sqlite::database& GetDB();
 
 	std::string GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime);
-	std::chrono::time_point<std::chrono::system_clock> GetDateTime(std::string const & timestamp);
+	std::chrono::time_point<std::chrono::system_clock> GetDateTime(std::string timestamp);
 
 	std::vector<uint64> pveTribesList;
 	std::vector<uint64> removedPveTribesList;
