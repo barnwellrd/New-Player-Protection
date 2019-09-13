@@ -23,7 +23,7 @@ std::string NewPlayerProtection::GetTimestamp(std::chrono::time_point<std::chron
 	return result;
 }
 
-std::chrono::time_point<std::chrono::system_clock> NewPlayerProtection::GetDateTime(std::string const & timestamp)
+std::chrono::time_point<std::chrono::system_clock> NewPlayerProtection::GetDateTime(std::string timestamp)
 {
 	int yyyy;
 	int mm;

@@ -52,6 +52,18 @@ bool IsPlayerExists(uint64 steam_id)
 	return exists;
 }
 
+bool IsPVETribe(uint64 tribeid)
+{
+	int isPve = 0;
+
+	if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribeid) > 0)
+	{
+		isPve = 1;
+		return isPve;
+	}
+	return isPve;
+}
+
 bool IsTribeProtected(uint64 tribeid)
 {
 	bool isProtected = 0;
@@ -87,17 +99,7 @@ bool IsTribeProtected(uint64 tribeid)
 	return isProtected;
 }
 
-bool IsPVETribe(uint64 tribeid)
-{
-	int isPve = 0;
 
-	if (std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribeid) > 0)
-	{
-		isPve = 1;
-		return isPve;
-	}
-	return isPve;
-}
 
 void RemoveExpiredTribesProtection()
 {
