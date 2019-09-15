@@ -329,7 +329,7 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 				}
 				else
 				{
-					if (IsTribeProtected(attacked_tribeid))
+					if (IsTribeProtected(attacked_tribeid) && attacked_tribeid != attacking_tribeid)
 					{
 						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
 						{

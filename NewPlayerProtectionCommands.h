@@ -83,7 +83,7 @@ inline void Status(AShooterPlayerController* player)
 		{
 			//loop through tribe member
 			uint64 tribe_id = player->TargetingTeamField();
-			std::chrono::time_point<std::chrono::system_clock> oldestDate = std::chrono::system_clock::now();
+			std::chrono::time_point<std::chrono::system_clock> oldestDate = std::chrono::system_clock::now() + std::chrono::hours(999999);
 			int highestLevel = 0;
 
 			auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
@@ -122,6 +122,17 @@ inline void Status(AShooterPlayerController* player)
 			auto hoursLeft = ((expireTime - (1440 * daysLeft)) / 60);
 			auto minutesLeft =  (expireTime - ((1440 * daysLeft) + (60 * hoursLeft)));
 
+			/*
+			Log::GetLog()->debug("protectionDaysInHours: {}", protectionDaysInHours.count());
+			Log::GetLog()->debug("oldestDate: {}", NewPlayerProtection::GetTimestamp(oldestDate));
+			Log::GetLog()->debug("now: {}", NewPlayerProtection::GetTimestamp(now));
+			Log::GetLog()->debug("endTime = now - protectionDaysInHours: {}", NewPlayerProtection::GetTimestamp(endTime));
+			Log::GetLog()->debug("expireTime = std::chrono::duration_cast<std::chrono::minutes>(oldestDate - endTime): {}", expireTime.count());
+			Log::GetLog()->debug("daysLeft: {}", daysLeft.count());
+			Log::GetLog()->debug("hoursLeft: {}", hoursLeft.count());
+			Log::GetLog()->debug("minutesLeft: {}", minutesLeft.count());
+			*/
+
 			//calculate level
 			int levelsLeft = NewPlayerProtection::MaxLevel - highestLevel;
 
@@ -156,7 +167,7 @@ inline void GetTribeID(AShooterPlayerController* player)
 	{
 		APrimalStructure* Structure = static_cast<APrimalStructure*>(Actor);
 		const int teamId = Structure->TargetingTeamField();
-		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, 20.0f, nullptr,
 			*NewPlayerProtection::TribeIDText, teamId);	
 	}
 	else
@@ -343,7 +354,7 @@ inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool
 				}
 
 				found = true;
-				if (allData->level > NewPlayerProtection::MaxLevel)
+				if (allData->level >= NewPlayerProtection::MaxLevel)
 				{
 					underMaxLevel = false;
 					break;
@@ -441,9 +452,10 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 		{
 			tribe_id = std::stoull(*parsed[1]);
 			hours = std::stoull(*parsed[2]);
-			if (hours < 1)
+			if (hours < 0)
 			{
-				throw;
+				Log::GetLog()->warn("({} {}) Parsing error: Hours cannot be negative.", __FILE__, __FUNCTION__);
+				return;
 			}
 		}
 		catch (const std::exception& exception)
@@ -466,7 +478,7 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 				}
 
 				found = true;
-				if (allData->level > NewPlayerProtection::MaxLevel)
+				if (allData->level >= NewPlayerProtection::MaxLevel)
 				{
 					underMaxLevel = false;
 					break;
@@ -495,7 +507,7 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 					if (allData->tribe_id == tribe_id)
 					{
 						allData->isNewPlayer = 1;
-						allData->startDateTime = now += std::chrono::hours(hours);
+						allData->startDateTime = now += std::chrono::hours(hours - NewPlayerProtection::HoursOfProtection);
 					}
 				}
 
@@ -511,7 +523,7 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 					if (onlineData->tribe_id == tribe_id)
 					{
 						onlineData->isNewPlayer = 1;
-						onlineData->startDateTime = now += std::chrono::hours(hours);
+						onlineData->startDateTime = now += std::chrono::hours(hours - NewPlayerProtection::HoursOfProtection);
 					}
 				}
 
@@ -662,7 +674,7 @@ inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacke
 			if (allData->tribe_id == tribe_id)
 			{
 				found = true;
-				if (allData->level > NewPlayerProtection::MaxLevel)
+				if (allData->level >= NewPlayerProtection::MaxLevel)
 				{
 					underMaxLevel = false;
 					break;
@@ -749,9 +761,10 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 		{
 			tribe_id = std::stoull(*parsed[1]);
 			hours = std::stoull(*parsed[2]);
-			if (hours < 1)
+			if (hours < 0)
 			{
-				throw;
+				Log::GetLog()->warn("({} {}) Parsing error: Hours cannot be negative.", __FILE__, __FUNCTION__);
+				return;
 			}
 		}
 		catch (const std::exception& exception)
@@ -774,7 +787,7 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 				}
 
 				found = true;
-				if (allData->level > NewPlayerProtection::MaxLevel)
+				if (allData->level >= NewPlayerProtection::MaxLevel)
 				{
 					underMaxLevel = false;
 					break;
@@ -803,7 +816,7 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 					if (allData->tribe_id == tribe_id)
 					{
 						allData->isNewPlayer = 1;
-						allData->startDateTime = now += std::chrono::hours(hours);
+						allData->startDateTime = now += std::chrono::hours(hours - NewPlayerProtection::HoursOfProtection);
 					}
 				}
 
@@ -819,7 +832,7 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 					if (onlineData->tribe_id == tribe_id)
 					{
 						onlineData->isNewPlayer = 1;
-						onlineData->startDateTime = now += std::chrono::hours(hours);
+						onlineData->startDateTime = now += std::chrono::hours(hours - NewPlayerProtection::HoursOfProtection);
 					}
 				}
 
@@ -869,7 +882,8 @@ inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
 			setToPve = std::stoull(*parsed[2]);
 			if (setToPve < 0 || setToPve > 1)
 			{
-				throw;
+				Log::GetLog()->warn("({} {}) Parsing error: setToPve can only be a 1 or 0.", __FILE__, __FUNCTION__);
+				return;
 			}
 		}
 		catch (const std::exception& exception)
@@ -996,9 +1010,10 @@ inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_p
 		{
 			tribe_id = std::stoull(*parsed[1]);
 			setToPve = std::stoull(*parsed[2]);
-			if (setToPve < 0 || setToPve > 1)
+			if (setToPve != 0 && setToPve != 1)
 			{
-				throw;
+				Log::GetLog()->warn("({} {}) Parsing error: setToPve can only be a 1 or 0.", __FILE__, __FUNCTION__);
+				return;
 			}
 		}
 		catch (const std::exception& exception)
@@ -1024,7 +1039,8 @@ inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_p
 			}
 		}
 		//if tribe found
-		if (found)
+		if (found || std::count(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), tribe_id) > 0 
+			|| std::count(NewPlayerProtection::removedPveTribesList.begin(), NewPlayerProtection::removedPveTribesList.end(), tribe_id) > 0)
 		{
 
 			if (setToPve == 1)
@@ -1117,12 +1133,19 @@ inline void RemoveChatCommands()
 inline void ResetPlayerProtection()
 {
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+	auto all_online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
 
 	//set all players to protected
 	for (const auto& allData : all_players_)
 	{
 		allData->isNewPlayer = 1;
 	}
+
+	for (const auto& Data : all_online_players_)
+	{
+		Data->isNewPlayer = 1;
+	}
+
 	RemoveExpiredTribesProtection();
 }
 
