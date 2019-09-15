@@ -65,20 +65,33 @@ sqlite::database& NewPlayerProtection::GetDB()
 void LoadDB()
 {
 	auto& db = NewPlayerProtection::GetDB();
+	try
+	{
+		// create players table
+		db << "create table if not exists Players ("
+			"SteamId integer primary key not null,"
+			"TribeId integer default 0,"
+			"Start_DateTime text default '',"
+			"Last_Login_DateTime text default '',"
+			"Level integer default 0,"
+			"Is_New_Player integer default 0"
+			");";
 
-	db << "create table if not exists Players ("
-		"SteamId integer primary key not null,"
-		"TribeId integer default 0,"
-		"Start_DateTime text default '',"
-		"Last_Login_DateTime text default '',"
-		"Level integer default 0,"
-		"Is_New_Player integer default 0"
-		");";
+		// create pve_tribes table
+		db << "create table if not exists PVE_Tribes ("
+			"TribeId integer primary key not null,"
+			"Is_Protected integer default 0"
+			");";
 
-	db << "create table if not exists PVE_Tribes ("
-		"TribeId integer default 0,"
-		"Is_Protected integer default 0"
-		");";
+		// set pragmas for db
+		db << "PRAGMA journal_mode = WAL;";
+		//db << "PRAGMA synchronous = OFF;";
+	}
+	catch (const sqlite::sqlite_exception& exception)
+	{
+		Log::GetLog()->error("({} {}) Unexpected DB error creating database: {}", __FILE__, __FUNCTION__, exception.what());
+	}
+	
 
 	try
 	{
@@ -94,10 +107,11 @@ void LoadDB()
 			NewPlayerProtection::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NewPlayerProtection::GetDateTime(startdate), NewPlayerProtection::GetDateTime(lastlogindate),level, isnewplayer);
 		};
 
+		Log::GetLog()->info("Players table data loaded.");
 	}
 	catch (const sqlite::sqlite_exception& exception)
 	{
-		Log::GetLog()->error("({} {}) Unexpected DB error loading players table {}", __FILE__, __FUNCTION__, exception.what());
+		Log::GetLog()->error("({} {}) Unexpected DB error loading players table: {}", __FILE__, __FUNCTION__, exception.what());
 	}
 
 	try
@@ -109,10 +123,12 @@ void LoadDB()
 			NewPlayerProtection::pveTribesList.push_back(tribeid);
 		};
 
+		Log::GetLog()->info("PVE_Tribes table data loaded.");
+
 	}
 	catch (const sqlite::sqlite_exception& exception)
 	{
-		Log::GetLog()->error("({} {}) Unexpected DB error loading pve_tribes table {}", __FILE__, __FUNCTION__, exception.what());
+		Log::GetLog()->error("({} {}) Unexpected DB error loading pve_tribes table: {}", __FILE__, __FUNCTION__, exception.what());
 	}
 }
 
@@ -165,6 +181,7 @@ inline void LoadConfig()
 	NewPlayerProtection::MessageDisplayDelay = NewPlayerProtection::config["General"]["MessageDisplayDelay"];
 	NewPlayerProtection::TempConfig = NewPlayerProtection::config["General"]["MessageColor"];
 	NewPlayerProtection::MessageColor = FLinearColor(NewPlayerProtection::TempConfig[0], NewPlayerProtection::TempConfig[1], NewPlayerProtection::TempConfig[2], NewPlayerProtection::TempConfig[3]);
+
 }
 
 inline void InitConfig()

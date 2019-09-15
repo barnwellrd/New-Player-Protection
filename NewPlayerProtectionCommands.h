@@ -22,6 +22,7 @@ inline void Disable(AShooterPlayerController* player)
 			{
 				//remove protection from all tribe members
 				uint64 tribe_id = player->TargetingTeamField();
+				uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
 
 				auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
 				auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
@@ -44,6 +45,8 @@ inline void Disable(AShooterPlayerController* player)
 				//display protection removed message
 				ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 					*NewPlayerProtection::NewPlayerProtectionDisableSuccess);
+
+				Log::GetLog()->info("Player: {} of Tribe: {} disabled own tribes NPP Protection.", steam_id, tribe_id);
 			}
 			else //else not tribe admin
 			{
@@ -207,6 +210,8 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 	//if Admin
 	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
+	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
+
 
 	bool found = false;
 	bool isProtected = false;
@@ -274,6 +279,8 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 				//display protection removed message
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 					*NewPlayerProtection::AdminTribeProtectionRemoved, tribe_id);
+
+				Log::GetLog()->info("Admin: {} removed NPP Protection of Tribe: {}.", steam_id, tribe_id);
 			}
 			else //tribe not protected
 			{
@@ -298,6 +305,8 @@ inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool
 	//if Admin
 	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
+
+	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
 
 	bool found = false;
 	bool underMaxLevel = true;
@@ -386,6 +395,8 @@ inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool
 				//display protection added message
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 					*NewPlayerProtection::AdminResetTribeProtectionSuccess, NewPlayerProtection::HoursOfProtection, tribe_id);
+
+				Log::GetLog()->info("Admin: {} reset the NPP Protection of Tribe: {}.", steam_id, tribe_id);
 			}
 			else //tribe not under max level
 			{
@@ -410,6 +421,9 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 	//if Admin
 	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
+
+	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
+
 
 	bool found = false;
 	bool underMaxLevel = true;
@@ -504,6 +518,8 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 				//display protection added message
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 					*NewPlayerProtection::AdminResetTribeProtectionSuccess, hours, tribe_id);
+
+				Log::GetLog()->info("Admin: {} added {} hours of NPP Protection to Tribe: {}.", steam_id, hours, tribe_id);
 			}
 			else //tribe not under max level
 			{
@@ -590,6 +606,8 @@ inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPack
 
 				//display protection removed message
 				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminTribeProtectionRemoved, tribe_id));
+
+				Log::GetLog()->info("RCON removed NPP Protection of Tribe: {}.", tribe_id);
 			}
 			else //tribe not protected
 			{
@@ -695,6 +713,7 @@ inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacke
 
 				//display protection added message
 				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminResetTribeProtectionSuccess, NewPlayerProtection::HoursOfProtection, tribe_id));
+				Log::GetLog()->info("RCON reset NPP Protection of Tribe: {}.", tribe_id);
 			}
 			else //tribe not under max level
 			{
@@ -806,6 +825,8 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 
 				//display protection added message
 				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminResetTribeProtectionSuccess, hours, tribe_id));
+
+				Log::GetLog()->info("RCON added {} hours of NPP Protection to Tribe: {}.", hours, tribe_id);
 			}
 			else //tribe not under max level
 			{
@@ -828,6 +849,8 @@ inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
 	//if Admin
 	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
+
+	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
 
 	bool found = false;
 
@@ -898,6 +921,9 @@ inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
 					//display pve tribe added message
 					ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 						*NewPlayerProtection::AdminPVETribeAddedSuccessMessage, tribe_id);
+
+					Log::GetLog()->info("Admin: {} enabled PVE status of Tribe: {}.", steam_id, tribe_id);
+
 				}
 				else
 				{
@@ -927,13 +953,15 @@ inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
 						}
 					}
 
-					//display tribe under max level message
+					//display tribe removed message
 					ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 						*NewPlayerProtection::AdminPVETribeRemovedSuccessMessage, tribe_id);
+
+					Log::GetLog()->info("Admin: {} disabled PVE status of Tribe: {}.", steam_id, tribe_id);
 				}
 				else
 				{
-					//display tribe under max level message
+					//display tribe already removed message
 					ArkApi::GetApiUtils().SendNotification(shooter_controller, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
 						*NewPlayerProtection::AdminPVETribeAlreadyRemovedMessage, tribe_id);
 				}
@@ -1022,6 +1050,8 @@ inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_p
 
 					//display pve tribe added message
 					rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminPVETribeAddedSuccessMessage, tribe_id));
+
+					Log::GetLog()->info("RCON enabled PVE status of Tribe: {}.", tribe_id);
 				}
 				else
 				{
@@ -1049,12 +1079,14 @@ inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_p
 							NewPlayerProtection::pveTribesList.erase(std::remove(NewPlayerProtection::pveTribesList.begin(), NewPlayerProtection::pveTribesList.end(), *iter), NewPlayerProtection::pveTribesList.end());
 						}
 
-						//display tribe under max level message
+						//display tribe removed message
 						rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminPVETribeRemovedSuccessMessage, tribe_id));
+
+						Log::GetLog()->info("RCON disabled PVE status of Tribe: {}.", tribe_id);
 					}
 					else
 					{
-						//display tribe under max level message
+						//display tribe already removed message
 						rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NewPlayerProtection::AdminPVETribeAlreadyRemovedMessage, tribe_id));
 					}
 				}

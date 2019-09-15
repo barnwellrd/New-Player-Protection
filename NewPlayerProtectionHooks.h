@@ -25,7 +25,9 @@ bool IsAdmin(uint64 steam_id)
 {
 	if (NewPlayerProtection::IgnoreAdmins)
 	{
-		return Permissions::IsPlayerInGroup(steam_id, "Admins");
+		bool isadmin = Permissions::IsPlayerInGroup(steam_id, "Admins");
+
+		return isadmin;
 	}
 	else
 	{
@@ -98,8 +100,6 @@ bool IsTribeProtected(uint64 tribeid)
 	}
 	return isProtected;
 }
-
-
 
 void RemoveExpiredTribesProtection()
 {
@@ -262,6 +262,9 @@ void Hook_AShooterGameMode_Logout(AShooterGameMode* _this, AController* exiting)
 bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 	bool result = AShooterGameMode_SaveWorld_original(GameMode);
 	auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+	auto& db = NewPlayerProtection::GetDB();
+
+	db << "BEGIN TRANSACTION;";
 
 	for (const auto& data : all_players_)
 	{
@@ -277,6 +280,11 @@ bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 	{
 		UpdatePVETribeDB(tribe_id, 0);
 	}
+
+	db << "END TRANSACTION;";
+	db << "PRAGMA optimize;";
+
+	Log::GetLog()->info("NPP database updated during world save.");
 
 	return result;
 }
@@ -312,7 +320,10 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
 						{
 							ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerDoingDamageMessage);
+						
+							Log::GetLog()->info("NPP Player / Tribe: {} / {} tried to damage a structure of Tribe: {}.", steam_id, attacking_tribeid, attacked_tribeid);
 						}
+
 						return 0;
 					}
 				}
@@ -323,7 +334,9 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 						if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
 						{
 							ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageMessage);
+							Log::GetLog()->info("Unprotected Player / Tribe: {} / {} tried to damage a structure of NPP Protected Tribe: {}.", steam_id, attacking_tribeid, attacked_tribeid);
 						}
+
 						return 0;
 					}
 				}
@@ -541,5 +554,7 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 			NewPlayerProtection::TimerProt::UpdateLevelAndTribe(data);
 		}
 		RemoveExpiredTribesProtection();
+
+		Log::GetLog()->info("PlayerUpdateIntervalInMins timer called: NPP Protections updated.");
 	}
 }
