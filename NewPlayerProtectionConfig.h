@@ -95,12 +95,11 @@ void LoadDB()
 
 	try
 	{
-		std::string hours = "'-";
+		std::string hours = "SELECT * FROM Players where Last_Login_DateTime > date('now', '-";
 		hours.append(std::to_string(NewPlayerProtection::NPPPlayerDecayInHours));
-		hours.append(" hour'");
+		hours.append(" hour');");
 
-		auto res = db << "SELECT * FROM Players where Last_Login_DateTime > date('now', ? );"
-			<< hours;
+		auto res = db << hours;
 
 		res >> [](uint64 steamid, uint64 tribeid, std::string startdate, std::string lastlogindate, int level, int isnewplayer)
 		{
