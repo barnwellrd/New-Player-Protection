@@ -2,6 +2,10 @@
 
 \x64/
 
+\.sonarqube/
+
+\bw-output/
+
 x64/Release/
 
 *.dll
