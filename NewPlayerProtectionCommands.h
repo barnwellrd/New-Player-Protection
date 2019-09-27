@@ -11,11 +11,11 @@ inline void Disable(AShooterPlayerController* player)
 	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player) || !NewPlayerProtection::AllowPlayersToDisableOwnedTribeProtection)
 		return;
 
-	//if new player
-	if (IsPlayerProtected(player))
+	// if not PVE player
+	if (!IsPVETribe(player->TargetingTeamField()))
 	{
-		// if not PVE player
-		if (!IsPVETribe(player->TargetingTeamField()))
+		//if new player
+		if (IsPlayerProtected(player))
 		{
 			//if tribe admin
 			if (player->IsTribeAdmin())
@@ -55,18 +55,18 @@ inline void Disable(AShooterPlayerController* player)
 					*NewPlayerProtection::NotTribeAdminMessage);
 			}
 		}
-		else // else PVE player
+		else //else not new player
 		{
-			//display PVE protection message
+			//display not under protection message
 			ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-				*NewPlayerProtection::PVEDisablePlayerMessage);
+				*NewPlayerProtection::NotANewPlayerMessage);
 		}
 	}
-	else	//else not new player
+	else // else PVE player 
 	{
-		//display not under protection message
+		//display PVE protection message
 		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
-			*NewPlayerProtection::NotANewPlayerMessage);
+			*NewPlayerProtection::PVEDisablePlayerMessage);
 	}
 }
 
@@ -75,11 +75,13 @@ inline void Status(AShooterPlayerController* player)
 	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
 		return;
 
+	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
+
 	// if not PVE player
 	if (!IsPVETribe(player->TargetingTeamField()))
 	{
-		//if new player
-		if (IsPlayerProtected(player))
+		//if new player or admin
+		if (IsPlayerProtected(player) || IsAdmin(steam_id))
 		{
 			//loop through tribe member
 			uint64 tribe_id = player->TargetingTeamField();
@@ -114,24 +116,13 @@ inline void Status(AShooterPlayerController* player)
 			}
 
 			//calulate time
-			auto protectionDaysInHours = std::chrono::hours(NewPlayerProtection::HoursOfProtection);
+			auto protectionInHours = std::chrono::hours(NewPlayerProtection::HoursOfProtection);
 			auto now = std::chrono::system_clock::now();
-			auto endTime = now - protectionDaysInHours;
-			auto expireTime = std::chrono::duration_cast<std::chrono::minutes>(oldestDate - endTime);
-			auto daysLeft = expireTime / 1440;
-			auto hoursLeft = ((expireTime - (1440 * daysLeft)) / 60);
-			auto minutesLeft =  (expireTime - ((1440 * daysLeft) + (60 * hoursLeft)));
-
-			/*
-			Log::GetLog()->debug("protectionDaysInHours: {}", protectionDaysInHours.count());
-			Log::GetLog()->debug("oldestDate: {}", NewPlayerProtection::GetTimestamp(oldestDate));
-			Log::GetLog()->debug("now: {}", NewPlayerProtection::GetTimestamp(now));
-			Log::GetLog()->debug("endTime = now - protectionDaysInHours: {}", NewPlayerProtection::GetTimestamp(endTime));
-			Log::GetLog()->debug("expireTime = std::chrono::duration_cast<std::chrono::minutes>(oldestDate - endTime): {}", expireTime.count());
-			Log::GetLog()->debug("daysLeft: {}", daysLeft.count());
-			Log::GetLog()->debug("hoursLeft: {}", hoursLeft.count());
-			Log::GetLog()->debug("minutesLeft: {}", minutesLeft.count());
-			*/
+			auto expireTime = now - protectionInHours;
+			auto expireTimeinMin = std::chrono::duration_cast<std::chrono::minutes>(oldestDate - expireTime);
+			auto daysLeft = expireTimeinMin / 1440;
+			auto hoursLeft = ((expireTimeinMin - (1440 * daysLeft)) / 60);
+			auto minutesLeft =  (expireTimeinMin - ((1440 * daysLeft) + (60 * hoursLeft)));
 
 			//calculate level
 			int levelsLeft = NewPlayerProtection::MaxLevel - highestLevel;
@@ -177,6 +168,35 @@ inline void GetTribeID(AShooterPlayerController* player)
 	}
 }
 
+// "!npp getpath"
+//Get the Plugin's blueprint path of target structure
+//May vary wildly from spawn Blueprint, so use this command's output plugin paths
+inline void GetTargetPath(AShooterPlayerController* player)
+{
+	//if player is dead or doesn't exist, break
+	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
+		return;
+
+	//get aimed target
+	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
+		false, false);
+
+	//check if target is a dino or structure
+	if (Actor && Actor->IsA(APrimalStructure::GetPrivateStaticClass()))
+	{
+
+		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, 20.0f, nullptr,
+			"{}", NewPlayerProtection::GetBlueprint(Actor).ToString());
+		Log::GetLog()->info("Blueprint Path From Command: {}", NewPlayerProtection::GetBlueprint(Actor).ToString());
+	}
+	//target not a dino or structure
+	else
+	{
+		ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
+			*NewPlayerProtection::NotAStructureMessage);
+	}
+}
+
 inline void ChatCommand(AShooterPlayerController* player, FString* message, int mode)
 {
 	TArray<FString> parsed;
@@ -201,6 +221,10 @@ inline void ChatCommand(AShooterPlayerController* player, FString* message, int 
 		{
 			GetTribeID(player);
 		}
+		else if (input.Compare("path") == 0)
+		{
+			GetTargetPath(player);
+		}
 		else
 		{
 			ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr,
@@ -221,8 +245,8 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 	//if Admin
 	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
-	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
 
+	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
 
 	bool found = false;
 	bool isProtected = false;

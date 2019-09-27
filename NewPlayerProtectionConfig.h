@@ -65,6 +65,7 @@ sqlite::database& NewPlayerProtection::GetDB()
 void LoadDB()
 {
 	auto& db = NewPlayerProtection::GetDB();
+
 	try
 	{
 		// create players table
@@ -92,7 +93,6 @@ void LoadDB()
 		Log::GetLog()->error("({} {}) Unexpected DB error creating database: {}", __FILE__, __FUNCTION__, exception.what());
 	}
 	
-
 	try
 	{
 		std::string hours = "SELECT * FROM Players where Last_Login_DateTime > date('now', '-";
@@ -103,10 +103,12 @@ void LoadDB()
 
 		res >> [](uint64 steamid, uint64 tribeid, std::string startdate, std::string lastlogindate, int level, int isnewplayer)
 		{
-			NewPlayerProtection::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NewPlayerProtection::GetDateTime(startdate), NewPlayerProtection::GetDateTime(lastlogindate),level, isnewplayer);
+			NewPlayerProtection::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NewPlayerProtection::GetDateTime(startdate), NewPlayerProtection::GetDateTime(lastlogindate), level, isnewplayer);
 		};
 
-		Log::GetLog()->info("Players table data loaded.");
+		//auto players = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
+		//Log::GetLog()->info("hours: {} .", hours);
+		//Log::GetLog()->info("Players table data loaded. Count: {} records.", players.size());
 	}
 	catch (const sqlite::sqlite_exception& exception)
 	{
@@ -143,33 +145,40 @@ inline void LoadConfig()
 	file >> NewPlayerProtection::config;
 	file.close();
 
+	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
+
 	NewPlayerProtection::PlayerUpdateIntervalInMins = NewPlayerProtection::config["General"]["PlayerUpdateIntervalInMins"];
 	NewPlayerProtection::IgnoreAdmins = NewPlayerProtection::config["General"]["IgnoreAdmins"];
 	NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures = NewPlayerProtection::config["General"]["AllowNewPlayersToDamageEnemyStructures"];
+	NewPlayerProtection::AllowPlayersToDisableOwnedTribeProtection = NewPlayerProtection::config["General"]["AllowPlayersToDisableOwnedTribeProtection"];
+	NewPlayerProtection::AllowWildCorruptedDinoDamage = NewPlayerProtection::config["General"]["AllowWildCorruptedDinoDamage"];
+	NewPlayerProtection::AllowWildDinoDamage = NewPlayerProtection::config["General"]["AllowWildDinoDamage"];
+	
 	NewPlayerProtection::NPPPlayerDecayInHours = NewPlayerProtection::config["General"]["NPPPlayerDecayInHours"];
 	NewPlayerProtection::NPPCommandPrefix = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPCommandPrefix"]).c_str());
-	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
-	NewPlayerProtection::HoursOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["HoursOfProtection"];
-	NewPlayerProtection::next_player_update = std::chrono::system_clock::now();
-	NewPlayerProtection::AllowPlayersToDisableOwnedTribeProtection = NewPlayerProtection::config["General"]["AllowPlayersToDisableOwnedTribeProtection"];
+	NewPlayerProtection::NPPAdminGroup = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPAdminGroup"]).c_str());
+
 	NewPlayerProtection::NewPlayerDoingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerDoingDamageMessage"]).c_str());
 	NewPlayerProtection::NewPlayerStructureTakingDamageMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageMessage"]).c_str());
 	NewPlayerProtection::NewPlayerStructureTakingDamageFromUnknownTribemateMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerStructureTakingDamageFromUnknownTribemateMessage"]).c_str());
+
+	NewPlayerProtection::NPPRemainingMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPRemainingMessage"]).c_str());
+	NewPlayerProtection::NPPInfoMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPInfoMessage"]).c_str());
 	NewPlayerProtection::NPPInvalidCommand = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPInvalidCommand"]).c_str());
 	NewPlayerProtection::NewPlayerProtectionDisableSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NewPlayerProtectionDisableSuccess"]).c_str());
 	NewPlayerProtection::NotANewPlayerMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotANewPlayerMessage"]).c_str());
 	NewPlayerProtection::NotTribeAdminMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotTribeAdminMessage"]).c_str());
-	NewPlayerProtection::NPPRemainingMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPRemainingMessage"]).c_str());
+	NewPlayerProtection::TribeIDText = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["TribeIDText"]).c_str());
+	NewPlayerProtection::NoStructureForTribeIDText = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NoStructureForTribeIDText"]).c_str());
+	NewPlayerProtection::PVEDisablePlayerMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["PVEDisablePlayerMessage"]).c_str());
+	NewPlayerProtection::PVEStatusMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["PVEStatusMessage"]).c_str());
+	NewPlayerProtection::NotAStructureMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NotAStructureMessage"]).c_str());
+	
 	NewPlayerProtection::AdminNoTribeExistsMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminNoTribeExistsMessage"]).c_str());
 	NewPlayerProtection::AdminTribeProtectionRemoved = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminTribeProtectionRemoved"]).c_str());
 	NewPlayerProtection::AdminTribeNotUnderProtection = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminTribeNotUnderProtection"]).c_str());
 	NewPlayerProtection::AdminResetTribeProtectionSuccess = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminResetTribeProtectionSuccess"]).c_str());
 	NewPlayerProtection::AdminResetTribeProtectionLvlFailure = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminResetTribeProtectionLvlFailure"]).c_str());
-	NewPlayerProtection::NPPInfoMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NPPInfoMessage"]).c_str());
-	NewPlayerProtection::TribeIDText = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["TribeIDText"]).c_str());
-	NewPlayerProtection::NoStructureForTribeIDText = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["NoStructureForTribeIDText"]).c_str());
-	NewPlayerProtection::PVEDisablePlayerMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["PVEDisablePlayerMessage"]).c_str());
-	NewPlayerProtection::PVEStatusMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["PVEStatusMessage"]).c_str());
 	NewPlayerProtection::AdminPVETribeAddedSuccessMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminPVETribeAddedSuccessMessage"]).c_str());
 	NewPlayerProtection::AdminPVETribeAlreadyAddedMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminPVETribeAlreadyAddedMessage"]).c_str());
 	NewPlayerProtection::AdminPVETribeRemovedSuccessMessage = FString(ArkApi::Tools::Utf8Decode(NewPlayerProtection::config["General"]["AdminPVETribeRemovedSuccessMessage"]).c_str());
@@ -181,6 +190,19 @@ inline void LoadConfig()
 	NewPlayerProtection::TempConfig = NewPlayerProtection::config["General"]["MessageColor"];
 	NewPlayerProtection::MessageColor = FLinearColor(NewPlayerProtection::TempConfig[0], NewPlayerProtection::TempConfig[1], NewPlayerProtection::TempConfig[2], NewPlayerProtection::TempConfig[3]);
 
+	NewPlayerProtection::MaxLevel = NewPlayerProtection::config["General"]["NewPlayerProtection"]["NewPlayerMaxLevel"];
+	NewPlayerProtection::HoursOfProtection = NewPlayerProtection::config["General"]["NewPlayerProtection"]["HoursOfProtection"];
+
+	//Clear vector so that config reload is clean
+	NewPlayerProtection::StructureExemptions.clear();
+
+	//Load exception structures from config
+	NewPlayerProtection::TempConfig = NewPlayerProtection::config["General"]["StructureExemptions"];
+
+	for (nlohmann::json x : NewPlayerProtection::TempConfig)
+	{
+		NewPlayerProtection::StructureExemptions.push_back(FString(ArkApi::Tools::Utf8Decode(x).c_str()).ToString());
+	}
 }
 
 inline void InitConfig()

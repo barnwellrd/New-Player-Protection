@@ -2,29 +2,36 @@
   "General": {
     "DbPathOverride": "",
     "PlayerUpdateIntervalInMins": 1,
-    "IgnoreAdmins": true,
+    "IgnoreAdmins": false,
     "AllowNewPlayersToDamageEnemyStructures": false,
     "AllowPlayersToDisableOwnedTribeProtection": true,
-    "NPPPlayerDecayInHours":384,
+    "AllowWildCorruptedDinoDamage": false,
+    "AllowWildDinoDamage": true,
+    "NPPPlayerDecayInHours": 384,
     "NPPCommandPrefix": "!",
+    "NPPAdminGroup": "NPPAdmin",
+
     "NewPlayerDoingDamageMessage": "You can't attack structures while under New Player Protection!",
     "NewPlayerStructureTakingDamageMessage": "You can't attack structures that are under New Player Protection!",
     "NewPlayerStructureTakingDamageFromUnknownTribemateMessage": "Your tribe can't attack structures that are under New Player Protection!",
+
+    "NPPRemainingMessage": "New Player Protection Remaining: {} Day(s) {} Hour(s) {} Minute(s) OR {} level(s)! [Based on oldest/highest tribe member]",
+    "NPPInfoMessage": "NPP Server Settings: Hours of Protection: {}, Max New Player Level: {}.",
     "NPPInvalidCommand": "Invalid chat command!",
     "NewPlayerProtectionDisableSuccess": "Your tribes protection has been disabled!",
     "NotANewPlayerMessage": "Your tribe is not under New Player Protection!",
     "NotTribeAdminMessage": "You are not a tribe admin!",
-    "NPPRemainingMessage": "New Player Protection Remaining: {} Day(s) {} Hour(s) {} Minute(s) OR {} level(s)! [Based on oldest/highest tribe member]",
+    "TribeIDText": "Target structure's Tribe ID: {}.",
+    "NoStructureForTribeIDText": "Please face the middle of your screen towards the structure you want to retrieve the Tribe ID from.",
+    "PVEDisablePlayerMessage": "PVE player can not disable their own protection",
+    "PVEStatusMessage": "Your tribe is a PVE tribe",
+    "NotAStructureMessage": "This target is not a structure!",
+
     "AdminNoTribeExistsMessage": "No tribe with that ID exists; Tribe: {}",
     "AdminTribeProtectionRemoved": "Protection has been removed for Tribe: {}",
     "AdminTribeNotUnderProtection": "No protection to remove from Tribe: {}",
     "AdminResetTribeProtectionSuccess": "{} hour(s) of protection from now has been given to Tribe: {}",
     "AdminResetTribeProtectionLvlFailure": "A player is over the NPP Max Level. Cannot give protection to Tribe: {}",
-    "NPPInfoMessage": "NPP Server Settings: Hours of Protection: {}, Max New Player Level: {}.",
-    "TribeIDText": "Target structure's Tribe ID: {}.",
-    "NoStructureForTribeIDText": "Please face the middle of your screen towards the structure you want to retrieve the Tribe ID from.",
-    "PVEDisablePlayerMessage": "PVE player can not disable their own protection",
-    "PVEStatusMessage": "Your tribe is a PVE tribe",
     "AdminPVETribeAddedSuccessMessage": "Successfully added to PVE Tribes: {}",
     "AdminPVETribeAlreadyAddedMessage": "Tribe was already added to PVE Tribes: {}",
     "AdminPVETribeRemovedSuccessMessage": "Successfully removed from PVE Tribes: {}",
@@ -43,6 +50,10 @@
     "NewPlayerProtection": {
       "NewPlayerMaxLevel": 60,
       "HoursOfProtection": 72
-    }
+    },
+
+    "StructureExemptions": [
+
+    ]
   }
 }
