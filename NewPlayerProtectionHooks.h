@@ -319,44 +319,66 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 			{
 				uint64 attacking_tribeid = DamageCauser->TargetingTeamField();
 
-				if (EventInstigator && EventInstigator->IsA(AShooterPlayerController::GetPrivateStaticClass())) //EventInstigator != NULL
+				if (EventInstigator)
 				{
-					uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(EventInstigator);
-					AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
-
-					if (IsAdmin(steam_id))
+					if (EventInstigator->IsA(APrimalDinoCharacter::GetPrivateStaticClass()))
 					{
-						return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
-					}
-
-
-					if (IsPlayerProtected(player))
-					{
-						if (!NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures)
+						if (NewPlayerProtection::AllowWildCorruptedDinoDamage && EventInstigator->TargetingTeamField() < 10000)
 						{
-							if (attacked_tribeid < 100000 || attacked_tribeid == attacking_tribeid)
-							{
-								return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
-							}
-							if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
-							{
-								ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerDoingDamageMessage);
+							FString dinoName;
+							EventInstigator->NameField().ToString(&dinoName);
+								if (dinoName.Contains("Corrupt"))
+								{
+									return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+								}
+						}
 
-								Log::GetLog()->info("NPP Player / Tribe: {} / {} tried to damage a structure of Tribe: {}.", steam_id, attacking_tribeid, attacked_tribeid);
-							}
-							return 0;
+						if (NewPlayerProtection::AllowWildDinoDamage && EventInstigator->TargetingTeamField() < 10000)
+						{
+							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 						}
 					}
-					else
+					
+
+					if (EventInstigator->IsA(AShooterPlayerController::GetPrivateStaticClass())) //EventInstigator != NULL
 					{
-						if (IsTribeProtected(attacked_tribeid) && attacked_tribeid != attacking_tribeid)
+						uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(EventInstigator);
+						AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
+
+						if (IsAdmin(steam_id))
 						{
-							if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
+							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+						}
+
+
+						if (IsPlayerProtected(player))
+						{
+							if (!NewPlayerProtection::AllowNewPlayersToDamageEnemyStructures)
 							{
-								ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageMessage);
-								Log::GetLog()->info("Unprotected Player / Tribe: {} / {} tried to damage a structure of NPP Protected Tribe: {}.", steam_id, attacking_tribeid, attacked_tribeid);
+								if (attacked_tribeid < 100000 || attacked_tribeid == attacking_tribeid)
+								{
+									return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+								}
+								if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
+								{
+									ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerDoingDamageMessage);
+
+									Log::GetLog()->info("NPP Player / Tribe: {} / {} tried to damage a structure of Tribe: {}.", steam_id, attacking_tribeid, attacked_tribeid);
+								}
+								return 0;
 							}
-							return 0;
+						}
+						else
+						{
+							if (IsTribeProtected(attacked_tribeid) && attacked_tribeid != attacking_tribeid)
+							{
+								if (NewPlayerProtection::TimerProt::Get().IsNextMessageReady(steam_id))
+								{
+									ArkApi::GetApiUtils().SendNotification(player, NewPlayerProtection::MessageColor, NewPlayerProtection::MessageTextSize, NewPlayerProtection::MessageDisplayDelay, nullptr, *NewPlayerProtection::NewPlayerStructureTakingDamageMessage);
+									Log::GetLog()->info("Unprotected Player / Tribe: {} / {} tried to damage a structure of NPP Protected Tribe: {}.", steam_id, attacking_tribeid, attacked_tribeid);
+								}
+								return 0;
+							}
 						}
 					}
 				}
@@ -368,19 +390,22 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 					}
 					if (IsTribeProtected(attacked_tribeid))
 					{
-						if (NewPlayerProtection::AllowWildCorruptedDinoDamage && DamageCauser->TargetingTeamField() < 10000)
+						if (DamageCauser->IsA(APrimalDinoCharacter::GetPrivateStaticClass()))
 						{
-							FString dinoName;
-							EventInstigator->NameField().ToString(&dinoName);
-							if (dinoName.Contains("Corrupt"))
+							if (NewPlayerProtection::AllowWildCorruptedDinoDamage && DamageCauser->TargetingTeamField() < 10000)
+							{
+								FString dinoName;
+								DamageCauser->NameField().ToString(&dinoName);
+								if (dinoName.Contains("Corrupt"))
+								{
+									return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+								}
+							}
+
+							if (NewPlayerProtection::AllowWildDinoDamage && DamageCauser->TargetingTeamField() < 10000)
 							{
 								return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 							}
-						}
-
-						if (NewPlayerProtection::AllowWildDinoDamage && DamageCauser->TargetingTeamField() < 10000)
-						{
-							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 						}
 
 						auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
