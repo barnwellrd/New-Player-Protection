@@ -5,8 +5,7 @@
 #include "hdr/sqlite_modern_cpp.h"
 #include "json.hpp"
  
-namespace NewPlayerProtection
-{
+namespace NPP {
 	int PlayerUpdateIntervalInMins;
 	bool IgnoreAdmins;
 	bool AllowNewPlayersToDamageEnemyStructures;
@@ -33,6 +32,7 @@ namespace NewPlayerProtection
 	FString PVEDisablePlayerMessage;
 	FString PVEStatusMessage;
 	FString NotAStructureMessage;
+	FString IsAdminTribe;
 
 	FString AdminNoTribeExistsMessage;
 	FString AdminTribeProtectionRemoved;
@@ -68,8 +68,7 @@ namespace NewPlayerProtection
 	std::vector<uint64> pveTribesList;
 	std::vector<uint64> removedPveTribesList;
 
-	class TimerProt
-	{
+	class TimerProt {
 		public:
 			static TimerProt& Get();
 
@@ -78,15 +77,13 @@ namespace NewPlayerProtection
 			TimerProt& operator=(const TimerProt&) = delete;
 			TimerProt& operator=(TimerProt&&) = delete;
 
-			struct OnlinePlayersData
-			{
+			struct OnlinePlayersData {
 				OnlinePlayersData(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, 
 					std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level,
 					int isNewPlayer, std::chrono::time_point<std::chrono::system_clock> nextMessageTime)
 					:
 					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), lastLoginDateTime(lastLoginDateTime),
-					level(level), isNewPlayer(isNewPlayer), nextMessageTime(nextMessageTime)
-				{}
+					level(level), isNewPlayer(isNewPlayer), nextMessageTime(nextMessageTime) {}
 				uint64 steam_id;
 				uint64 tribe_id;
 				std::chrono::time_point<std::chrono::system_clock> startDateTime;
@@ -96,14 +93,12 @@ namespace NewPlayerProtection
 				std::chrono::time_point<std::chrono::system_clock> nextMessageTime;
 			};
 
-			struct AllPlayerData
-			{
+			struct AllPlayerData {
 				AllPlayerData(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, 
 					std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level, int isNewPlayer)
 					: 
 					steam_id(steam_id), tribe_id(tribe_id), startDateTime(startDateTime), lastLoginDateTime(lastLoginDateTime), 
-					level(level), isNewPlayer(isNewPlayer)
-				{}
+					level(level), isNewPlayer(isNewPlayer) {}
 				uint64 steam_id;
 				uint64 tribe_id;
 				std::chrono::time_point<std::chrono::system_clock> startDateTime;
@@ -124,7 +119,8 @@ namespace NewPlayerProtection
 
 			void AddOnlinePlayer(uint64 steam_id, uint64 team_id);
 			void AddNewPlayer(uint64 steam_id, uint64 tribe_id);
-			void AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level, int isNewPlayer);
+			void AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, 
+				std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level, int isNewPlayer);
 			void RemovePlayer(uint64 steam_id);
 			bool IsNextMessageReady(uint64 steam_id);
 
@@ -134,16 +130,13 @@ namespace NewPlayerProtection
 			std::vector<std::shared_ptr<AllPlayerData>> GetAllPlayers();
 	};
 
-	FString GetBlueprint(UObjectBase* object)
-	{
+	FString GetBlueprint(UObjectBase* object) {
 
-		if (object != nullptr && object->ClassField() != nullptr)
-		{
+		if (object != nullptr && object->ClassField() != nullptr) {
 			FString path_name;
 			object->ClassField()->GetDefaultObject(true)->GetFullName(&path_name, nullptr);
 
-			if (int find_index = 0; path_name.FindChar(' ', find_index))
-			{
+			if (int find_index = 0; path_name.FindChar(' ', find_index)) {
 				path_name = "Blueprint'" + path_name.Mid(find_index + 1,
 					path_name.Len() - (find_index + (path_name.EndsWith(
 						"_C", ESearchCase::
@@ -156,8 +149,4 @@ namespace NewPlayerProtection
 		}
 		return FString("");
 	}
-
 }
-
-
-
