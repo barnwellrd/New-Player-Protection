@@ -255,6 +255,7 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 			if (DamageCauser) {
 				uint64 attacking_tribeid = DamageCauser->TargetingTeamField();
 
+				//EventInstigator != NULL 
 				if (EventInstigator) {
 					if (EventInstigator->IsA(APrimalDinoCharacter::GetPrivateStaticClass())) {
 						if (NPP::AllowWildCorruptedDinoDamage && EventInstigator->TargetingTeamField() < 10000) {
@@ -270,7 +271,7 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 						}
 					}
 					
-					//EventInstigator != NULL 
+					//EventInstigator == AShooterPlayerController 
 					if (EventInstigator->IsA(AShooterPlayerController::GetPrivateStaticClass())) {
 						uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(EventInstigator);
 						AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
