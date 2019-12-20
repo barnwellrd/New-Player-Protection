@@ -26,7 +26,6 @@ namespace NPP {
 	FString NPPInvalidCommand;
 	FString NewPlayerProtectionDisableSuccess;
 	FString NotANewPlayerMessage;
-	FString NotTribeAdminMessage;
 	FString TribeIDText;
 	FString NoStructureForTribeIDText;
 	FString PVEDisablePlayerMessage;
@@ -67,6 +66,8 @@ namespace NPP {
 
 	std::vector<uint64> pveTribesList;
 	std::vector<uint64> removedPveTribesList;
+
+	std::vector<uint64> nppTribesList;
 
 	class TimerProt {
 		public:
@@ -124,7 +125,7 @@ namespace NPP {
 			void RemovePlayer(uint64 steam_id);
 			bool IsNextMessageReady(uint64 steam_id);
 
-			void UpdateLevelAndTribe(std::shared_ptr <OnlinePlayersData> data);
+			void UpdateLevelAndTribe();
 
 			std::vector<std::shared_ptr<OnlinePlayersData>> GetOnlinePlayers();
 			std::vector<std::shared_ptr<AllPlayerData>> GetAllPlayers();

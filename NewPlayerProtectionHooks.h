@@ -59,20 +59,9 @@ bool IsTribeProtected(uint64 tribeid) {
 	bool isProtected = 0;
 	if (tribeid > 100000) {
 		if (!IsPVETribe(tribeid)) {
-			//potentially check a vector of tribes that lists whether they are protected or not
-
-			auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
-			const auto iter = std::find_if(
-				all_players_.begin(), all_players_.end(),
-				[tribeid](const std::shared_ptr<NPP::TimerProt::AllPlayerData>& data) {
-					if (!IsAdmin(data->steam_id)) {
-						return (data->tribe_id == tribeid && data->isNewPlayer == 1);
-					}
-				});
-
-			if (iter != all_players_.end()) {
+			//check a vector of tribes that lists protected tribes
+			if(std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) > 0) {
 				isProtected = 1;
-				return isProtected;
 			}
 		}
 		else {
@@ -93,7 +82,6 @@ bool IsExemptStructure(AActor* actor) {
 			return true;
 		}
 	}
-
 	return false;
 }
 
@@ -467,30 +455,36 @@ bool NPP::TimerProt::IsNextMessageReady(uint64 steam_id) {
 	return true;
 }
 
-void NPP::TimerProt::UpdateLevelAndTribe(std::shared_ptr<OnlinePlayersData> data) {
-	AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
+void NPP::TimerProt::UpdateLevelAndTribe() {
 
-	if (ArkApi::IApiUtils::IsPlayerDead(player)) {
-		return;
-	}
+	for (const auto& data : online_players_) {
 
-	APlayerState* player_state = player->PlayerStateField();
-	AShooterPlayerState* shooter_player_state = static_cast<AShooterPlayerState*>(player_state);
-	uint64 tribe_id = shooter_player_state->TargetingTeamField();
-	int level = shooter_player_state->MyPlayerDataStructField()->MyPersistentCharacterStatsField()
-		->CharacterStatusComponent_HighestExtraCharacterLevelField() + 1;
+		AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
 
-	data->level = level;
-	data->tribe_id = tribe_id;
+		if (ArkApi::IApiUtils::IsPlayerDead(player)) {
+			return;
+		}
 
+		APlayerState* player_state = player->PlayerStateField();
+		AShooterPlayerState* shooter_player_state = static_cast<AShooterPlayerState*>(player_state);
+		uint64 tribe_id = shooter_player_state->TargetingTeamField();
+		int level = shooter_player_state->MyPlayerDataStructField()->MyPersistentCharacterStatsField()
+			->CharacterStatusComponent_HighestExtraCharacterLevelField() + 1;
 
-	for (const auto& alldata : all_players_) {
-		if (alldata->steam_id == data->steam_id) {
-			alldata->level = level;
-			alldata->tribe_id = tribe_id;
-			break;
+		data->level = level;
+		data->tribe_id = tribe_id;
+
+		for (const auto& alldata : all_players_) {
+			if (alldata->steam_id == data->steam_id) {
+				alldata->level = level;
+				alldata->tribe_id = tribe_id;
+				break;
+			}
 		}
 	}
+
+
+	
 }
 
 std::vector<std::shared_ptr<NPP::TimerProt::OnlinePlayersData>> NPP::TimerProt::GetOnlinePlayers() {
@@ -509,10 +503,7 @@ void NPP::TimerProt::UpdateTimer() {
 	if (diff.count() <= 0) {
 		auto player_interval = std::chrono::minutes(player_update_interval_);
 		NPP::next_player_update = now_time + player_interval;
-
-		for (const auto& data : online_players_) {
-			NPP::TimerProt::UpdateLevelAndTribe(data);
-		}
+		NPP::TimerProt::UpdateLevelAndTribe();
 		RemoveExpiredTribesProtection();
 
 		Log::GetLog()->info("PlayerUpdateIntervalInMins timer called: NPP Protections updated.");

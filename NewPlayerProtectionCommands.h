@@ -14,38 +14,29 @@ inline void Disable(AShooterPlayerController* player) {
 	if (!IsPVETribe(player->TargetingTeamField())) {
 		//if new player
 		if (IsPlayerProtected(player)) {
-			//if tribe admin
-			if (player->IsTribeAdmin()) {
-				//remove protection from all tribe members
-				uint64 tribe_id = player->TargetingTeamField();
-				uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
+			//remove protection from all tribe members
+			uint64 tribe_id = player->TargetingTeamField();
+			uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
 
-				auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
-				auto online_players_ = NPP::TimerProt::Get().GetOnlinePlayers();
+			auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
+			auto online_players_ = NPP::TimerProt::Get().GetOnlinePlayers();
 
-				for (const auto& allData : all_players_) {
-					if (allData->tribe_id == tribe_id) {
-						allData->isNewPlayer = 0;
-					}
+			for (const auto& allData : all_players_) {
+				if (allData->tribe_id == tribe_id) {
+					allData->isNewPlayer = 0;
 				}
+			}
 
-				for (const auto& onlineData : online_players_) {
-					if (onlineData->tribe_id == tribe_id) {
-						onlineData->isNewPlayer = 0;
-					}
+			for (const auto& onlineData : online_players_) {
+				if (onlineData->tribe_id == tribe_id) {
+					onlineData->isNewPlayer = 0;
 				}
-				//display protection removed message
-				ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
-					NPP::MessageDisplayDelay, nullptr, *NPP::NewPlayerProtectionDisableSuccess);
+			}
+			//display protection removed message
+			ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
+				NPP::MessageDisplayDelay, nullptr, *NPP::NewPlayerProtectionDisableSuccess);
 
-				Log::GetLog()->info("Player: {} of Tribe: {} disabled own tribes NPP Protection.", steam_id, tribe_id);
-			}
-			//else not tribe admin
-			else {
-				//display not tribe admin message
-				ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
-					NPP::MessageDisplayDelay, nullptr, *NPP::NotTribeAdminMessage);
-			}
+			Log::GetLog()->info("Player: {} of Tribe: {} disabled own tribes NPP Protection.", steam_id, tribe_id);
 		}
 		//else not new player 
 		else {
