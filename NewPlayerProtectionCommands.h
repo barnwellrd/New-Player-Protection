@@ -17,12 +17,20 @@ inline void Disable(AShooterPlayerController* player)
 		//if new player
 		if (IsPlayerProtected(player))
 		{
+			uint64 tribe_id = player->TargetingTeamField();
+			uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
+			uint64 player_id = ArkApi::IApiUtils::GetPlayerID(player);
+			FTribeData* tribe_data = static_cast<FTribeData*>(FMemory::Malloc(0x128 + 0x28));
+			RtlSecureZeroMemory(tribe_data, 0x128 + 0x28);
+			auto tribe = ArkApi::GetApiUtils().GetShooterGameMode()->GetOrLoadTribeData(tribe_id, tribe_data);
+			uint64 admintribe_id = tribe_data->OwnerPlayerDataIDField();
+			FMemory::Free(tribe_data);
+			
 			//if tribe admin
-			if (player->IsTribeAdmin())
+			if (admintribe_id == player_id)
 			{
 				//remove protection from all tribe members
-				uint64 tribe_id = player->TargetingTeamField();
-				uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
+
 
 				auto all_players_ = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
 				auto online_players_ = NewPlayerProtection::TimerProt::Get().GetOnlinePlayers();
