@@ -17,8 +17,10 @@ inline void Disable(AShooterPlayerController* player)
 		//if new player
 		if (IsPlayerProtected(player))
 		{
+			AShooterPlayerState* State = static_cast<AShooterPlayerState*>(player->PlayerStateField());
+
 			//if tribe admin
-			if (player->IsTribeAdmin())
+			if (State->IsTribeAdmin())
 			{
 				//remove protection from all tribe members
 				uint64 tribe_id = player->TargetingTeamField();
