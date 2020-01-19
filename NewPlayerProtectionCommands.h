@@ -18,9 +18,9 @@ inline void Disable(AShooterPlayerController* player)
 		if (IsPlayerProtected(player))
 		{
 			AShooterPlayerState* State = static_cast<AShooterPlayerState*>(player->PlayerStateField());
-
+			
 			//if tribe admin
-			if (State->IsTribeAdmin())
+			if (State->MyTribeDataField()->TribeIDField() == 0 || (State->MyTribeDataField()->TribeIDField() != 0 && State->IsTribeAdmin()))
 			{
 				//remove protection from all tribe members
 				uint64 tribe_id = player->TargetingTeamField();
@@ -95,7 +95,6 @@ inline void Status(AShooterPlayerController* player)
 			//Loop through tribe
 			for (const auto& allData : all_players_)
 			{
-
 				if (IsAdmin(allData->steam_id))
 				{
 					continue;

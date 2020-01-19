@@ -80,7 +80,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\avtoj\source\repos\New-Player-Protection\Lib\Permissions\Public;C:\Users\avtoj\source\repos\New-Player-Protection\Lib\Core\Public;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\avtoj\source\repos\New-Player-Protection\Lib\minhook-master\include;C:\Users\avtoj\source\repos\New-Player-Protection\Lib\Permissions\Public;C:\Users\avtoj\source\repos\New-Player-Protection\Lib\Core\Public;$(IncludePath)</IncludePath>
     <TargetExt>.dll</TargetExt>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <ExcludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(VC_ExecutablePath_x64);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(FxCopDir);$(MSBuild_ExecutablePath);$(VC_LibraryPath_x64);$(SystemRoot)</ExcludePath>

@@ -68,6 +68,8 @@ namespace NewPlayerProtection
 	std::vector<uint64> pveTribesList;
 	std::vector<uint64> removedPveTribesList;
 
+	TMap<uint64, TArray<FString>>PermissionsMap;
+
 	class TimerProt
 	{
 		public:
