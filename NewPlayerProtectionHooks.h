@@ -1,47 +1,9 @@
 #pragma once
-#include <MinHook.h>
-#pragma comment(lib, "libMinHook.x64.lib")
 
 DECLARE_HOOK(AShooterGameMode_HandleNewPlayer, bool, AShooterGameMode*, AShooterPlayerController*, UPrimalPlayerData*, AShooterCharacter*, bool);
 DECLARE_HOOK(AShooterGameMode_Logout, void, AShooterGameMode*, AController*);
 DECLARE_HOOK(AShooterGameMode_SaveWorld, bool, AShooterGameMode*);
 DECLARE_HOOK(APrimalStructure_TakeDamage, float, APrimalStructure*, float, FDamageEvent*, AController*, AActor*);
-DECLARE_HOOK(AShooterGameMode_InitGame, void, AShooterGameMode*, FString*, FString*, FString*);
-
-//Declare Hooks for Permissions.dll
-DECLARE_HOOK(AddPlayerToGroup, std::optional<std::string>, uint64, const FString&);
-DECLARE_HOOK(RemovePlayerFromGroup, std::optional<std::string>, uint64, const FString&);
-
-
-void SetHook(LPVOID pTarget, LPVOID pDetour, LPVOID* ppOriginal)
-{
-	if (MH_CreateHook(pTarget, pDetour, ppOriginal) != MH_OK)
-	{
-		Log::GetLog()->error("Create Hook Failed!");
-		return;
-	}
-
-	if (MH_EnableHook(pTarget) != MH_OK)
-	{
-		Log::GetLog()->error("Enable Hook Failed!");
-		return;
-	}
-}
-
-void HookPermissions()
-{
-	//Hook AddPlayerToGroup from Permissions.dll
-	void* addr_addPlayerToGroup = GetProcAddress(GetModuleHandleA("Permissions.dll"), "?AddPlayerToGroup@Permissions@@YA?AV?$optional@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@std@@_KAEBVFString@@@Z");
-	SetHook(addr_addPlayerToGroup, &Hook_AddPlayerToGroup, reinterpret_cast<LPVOID*>(&AddPlayerToGroup_original));
-	Log::GetLog()->info("Hooked AddPlayerToGroup (Stage 1)");
-
-	//Hook RemovePlayerFromGroup from Permissions.dll
-	void* addr_removePlayerFromGroup = GetProcAddress(GetModuleHandleA("Permissions.dll"), "?RemovePlayerFromGroup@Permissions@@YA?AV?$optional@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@std@@_KAEBVFString@@@Z");
-	SetHook(addr_removePlayerFromGroup, &Hook_RemovePlayerFromGroup, reinterpret_cast<LPVOID*>(&RemovePlayerFromGroup_original));
-	Log::GetLog()->info("Hooked RemovePlayerFromGroup (Stage 2)");
-
-	Log::GetLog()->info("Complete");
-}
 
 void InitHooks()
 {
@@ -49,10 +11,6 @@ void InitHooks()
 	ArkApi::GetHooks().SetHook("AShooterGameMode.Logout", &Hook_AShooterGameMode_Logout, &AShooterGameMode_Logout_original);
 	ArkApi::GetHooks().SetHook("AShooterGameMode.SaveWorld", &Hook_AShooterGameMode_SaveWorld, &AShooterGameMode_SaveWorld_original);
 	ArkApi::GetHooks().SetHook("APrimalStructure.TakeDamage", &Hook_APrimalStructure_TakeDamage, &APrimalStructure_TakeDamage_original);
-	ArkApi::GetHooks().SetHook("AShooterGameMode.InitGame", &Hook_AShooterGameMode_InitGame, &AShooterGameMode_InitGame_original);
-
-	//Initialize Local MinHook
-	MH_Initialize();
 }
 
 void RemoveHooks()
@@ -61,7 +19,6 @@ void RemoveHooks()
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.Logout", &Hook_AShooterGameMode_Logout);
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.SaveWorld", &Hook_AShooterGameMode_SaveWorld);
 	ArkApi::GetHooks().DisableHook("APrimalStructure.TakeDamage", &Hook_APrimalStructure_TakeDamage);
-	ArkApi::GetHooks().DisableHook("AShooterGameMode.InitGame", &Hook_AShooterGameMode_InitGame);
 }
 
 bool IsAdmin(uint64 steam_id)
@@ -289,45 +246,6 @@ void UpdatePVETribeDB(uint64 tribe_id, bool stillProtected)
 		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 	}
 }
-
-std::optional<std::string> Hook_AddPlayerToGroup(uint64 steam_id, const FString& group)
-{
-	Log::GetLog()->warn("Hook Called!");
-
-	std::optional<std::string> Orig =  AddPlayerToGroup_original(steam_id, group);
-
-	Log::GetLog()->warn(steam_id);
-	Log::GetLog()->warn(group.ToString());
-
-	if (!Orig.has_value())
-	{
-		if (NewPlayerProtection::PermissionsMap.Find(steam_id))
-			NewPlayerProtection::PermissionsMap[steam_id].Add(group);
-	}
-
-	return Orig;
-}
-
-std::optional<std::string> Hook_RemovePlayerFromGroup(uint64 steam_id, const FString& group)
-{
-	std::optional<std::string> Orig = RemovePlayerFromGroup_original(steam_id, group);
-
-	if (!Orig.has_value())
-	{
-		if (NewPlayerProtection::PermissionsMap.Find(steam_id))
-			NewPlayerProtection::PermissionsMap[steam_id].Remove(group);
-	}
-
-	return Orig;
-}
-
-void  Hook_AShooterGameMode_InitGame(AShooterGameMode* _this, FString* MapName, FString* Options, FString* ErrorMessage)
-{
-	AShooterGameMode_InitGame_original(_this, MapName, Options, ErrorMessage);
-
-	HookPermissions();
-}
-
 
 bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlayerController* new_player, UPrimalPlayerData* player_data, AShooterCharacter* player_character, bool is_from_login)
 {
@@ -701,6 +619,15 @@ void NewPlayerProtection::TimerProt::UpdateTimer()
 		for (const auto& data : online_players_)
 		{
 			NewPlayerProtection::TimerProt::UpdateLevelAndTribe(data);
+			
+			//Update Permissions Cache
+			uint64 SteamID = data->steam_id;
+
+			if (NewPlayerProtection::PermissionsMap.Find(SteamID))
+			{
+				NewPlayerProtection::PermissionsMap[SteamID] = Permissions::GetPlayerGroups(SteamID);
+			}
+
 		}
 		RemoveExpiredTribesProtection();
 
