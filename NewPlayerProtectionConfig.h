@@ -155,6 +155,7 @@ inline void LoadConfig() {
 	NPP::NPPInvalidCommand = FString(ArkApi::Tools::Utf8Decode(NPP::config["General"]["NPPInvalidCommand"]).c_str());
 	NPP::NewPlayerProtectionDisableSuccess = FString(ArkApi::Tools::Utf8Decode(NPP::config["General"]["NewPlayerProtectionDisableSuccess"]).c_str());
 	NPP::NotANewPlayerMessage = FString(ArkApi::Tools::Utf8Decode(NPP::config["General"]["NotANewPlayerMessage"]).c_str());
+	NPP::NotTribeAdminMessage = FString(ArkApi::Tools::Utf8Decode(NPP::config["General"]["NotTribeAdminMessage"]).c_str());
 	NPP::TribeIDText = FString(ArkApi::Tools::Utf8Decode(NPP::config["General"]["TribeIDText"]).c_str());
 	NPP::NoStructureForTribeIDText = FString(ArkApi::Tools::Utf8Decode(NPP::config["General"]["NoStructureForTribeIDText"]).c_str());
 	NPP::PVEDisablePlayerMessage = FString(ArkApi::Tools::Utf8Decode(NPP::config["General"]["PVEDisablePlayerMessage"]).c_str());

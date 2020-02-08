@@ -26,6 +26,7 @@ namespace NPP {
 	FString NPPInvalidCommand;
 	FString NewPlayerProtectionDisableSuccess;
 	FString NotANewPlayerMessage;
+	FString NotTribeAdminMessage;
 	FString TribeIDText;
 	FString NoStructureForTribeIDText;
 	FString PVEDisablePlayerMessage;
