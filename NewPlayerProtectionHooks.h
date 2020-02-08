@@ -20,15 +20,6 @@ void RemoveHooks() {
 	ArkApi::GetHooks().DisableHook("APrimalStructure.TakeDamage", &Hook_APrimalStructure_TakeDamage);
 }
 
-bool IsAdmin(uint64 steam_id) {
-	if (NPP::IgnoreAdmins) {
-		return Permissions::IsPlayerInGroup(steam_id, NPP::NPPAdminGroup);
-	}
-	else {
-		return false;
-	}
-}
-
 bool IsPlayerExists(uint64 steam_id) {
 	int exists = 0;
 	auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
@@ -46,30 +37,15 @@ bool IsPlayerExists(uint64 steam_id) {
 }
 
 bool IsPVETribe(uint64 tribeid) {
-	int isPve = 0;
-
-	if (std::count(NPP::pveTribesList.begin(), NPP::pveTribesList.end(), tribeid) > 0) {
-		isPve = 1;
-		return isPve;
-	}
-	return isPve;
+	return std::count(NPP::pveTribesList.begin(), NPP::pveTribesList.end(), tribeid) > 0;
 }
 
 bool IsTribeProtected(uint64 tribeid) {
-	bool isProtected = 0;
 	if (tribeid > 100000) {
-		if (!IsPVETribe(tribeid)) {
-			//check a vector of tribes that lists protected tribes
-			if(std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) > 0) {
-				isProtected = 1;
-			}
-		}
-		else {
-			isProtected = 1;
-			return isProtected;
-		}
+		//check a vector of tribes that lists protected tribes
+		return IsPVETribe(tribeid) ? true : std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) > 0;
 	}
-	return isProtected;
+	return false;
 }
 
 bool IsExemptStructure(AActor* actor) {
@@ -96,12 +72,6 @@ void RemoveExpiredTribesProtection() {
 		//check all players for expired protection
 		auto diff = std::chrono::duration_cast<std::chrono::seconds>(allData->startDateTime - expireTime);
 
-
-		//if (IsPVETribe(allData->tribe_id))
-		//{
-		//	continue;
-		//}
-
 		if (diff.count() <= 0 || allData->level >= NPP::MaxLevel || allData->isNewPlayer == 0) {
 			//if not an admin
 			if (!IsAdmin(allData->steam_id)) {
@@ -112,6 +82,21 @@ void RemoveExpiredTribesProtection() {
 					if (allData->tribe_id == moreAllData->tribe_id) {
 						if (!IsAdmin(moreAllData->steam_id)) {
 							moreAllData->isNewPlayer = 0;
+							uint64 tribe_id = moreAllData->tribe_id;
+
+							//remove from protected tribes list if found
+							if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), moreAllData->tribe_id) > 0) {
+								const auto iter = std::find_if(
+									NPP::pveTribesList.begin(), NPP::pveTribesList.end(),
+									[tribe_id](const uint64 data) {
+									return data == tribe_id;
+								});
+
+								if (iter != NPP::pveTribesList.end()) {
+									NPP::pveTribesList.erase(std::remove(NPP::pveTribesList.begin(),
+										NPP::pveTribesList.end(), *iter), NPP::pveTribesList.end());
+								}
+							}
 						}
 					}
 				}
@@ -131,17 +116,8 @@ void RemoveExpiredTribesProtection() {
 
 bool IsPlayerProtected(APlayerController * PC) {
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(PC);
-	int isProtected = 0;
-	auto online_players_ = NPP::TimerProt::Get().GetOnlinePlayers();
-
-	for (const auto& data : online_players_) {
-		if (data->steam_id == steam_id) {
-			if (!IsAdmin(data->steam_id)) {
-				return data->isNewPlayer;
-			}
-		}
-	}
-	return isProtected;
+	// If not admin, return if in a protected tribe, if admin, return unprotected
+	return !IsAdmin(steam_id) ? IsTribeProtected(PC->TargetingTeamField()) : false;
 }
 
 void UpdatePlayerDB(std::shared_ptr<NPP::TimerProt::AllPlayerData> data) {
@@ -151,7 +127,6 @@ void UpdatePlayerDB(std::shared_ptr<NPP::TimerProt::AllPlayerData> data) {
 		db << "INSERT OR REPLACE INTO Players(SteamId, TribeId, Start_DateTime, Last_Login_DateTime, Level, Is_New_Player) VALUES(?,?,?,?,?,?);"
 			<< data->steam_id << data->tribe_id << NPP::GetTimestamp(data->startDateTime) 
 			<< NPP::GetTimestamp(data->lastLoginDateTime) << data->level << data->isNewPlayer;
-
 	}
 	catch (const sqlite::sqlite_exception& exception) {
 		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
@@ -500,6 +475,8 @@ void NPP::TimerProt::UpdateTimer() {
 	const auto now_time = std::chrono::system_clock::now();
 
 	auto diff = std::chrono::duration_cast<std::chrono::seconds>(NPP::next_player_update - now_time);
+
+	LoadNppPermissionsArray();
 
 	if (diff.count() <= 0) {
 		auto player_interval = std::chrono::minutes(player_update_interval_);

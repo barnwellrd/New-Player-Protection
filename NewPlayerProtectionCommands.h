@@ -1019,23 +1019,26 @@ inline void ResetPlayerProtection() {
 	RemoveExpiredTribesProtection();
 }
 
+void ReloadConfig() {
+	RemoveChatCommands();
+	LoadConfig();
+	InitChatCommands();
+	ResetPlayerProtection();
+	LoadNppPermissionsArray();
+}
+
 inline void ConsoleReloadConfig(APlayerController* player, FString* cmd, bool boolean) {
 	const auto shooter_controller = static_cast<AShooterPlayerController*>(player);
 
 	//if not Admin
 	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
 		return;
-	RemoveChatCommands();
-	LoadConfig();
-	InitChatCommands();
-	ResetPlayerProtection();
+
+	ReloadConfig();
 }
 
 inline void RconReloadConfig(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*) {
-	RemoveChatCommands();
-	LoadConfig();
-	InitChatCommands();
-	ResetPlayerProtection();
+	ReloadConfig();
 }
 
 inline void InitCommands() {

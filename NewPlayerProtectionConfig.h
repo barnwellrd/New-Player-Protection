@@ -52,6 +52,10 @@ std::chrono::time_point<std::chrono::system_clock> NPP::GetDateTime(std::string 
 	return time_point_result;
 }
 
+bool IsAdmin(uint64 steam_id) {
+	return (NPP::IgnoreAdmins && NPP::nppAdminArray.Contains(steam_id));
+}
+
 sqlite::database& NPP::GetDB() {
 	static sqlite::database db(config["General"].value("DbPathOverride", "").empty()
 		? ArkApi::Tools::GetCurrentDir() + "/ArkApi/Plugins/NewPlayerProtection/NewPlayerProtection.db"
@@ -81,7 +85,6 @@ void LoadDB() {
 
 		// set pragmas for db
 		db << "PRAGMA journal_mode = WAL;";
-		//db << "PRAGMA synchronous = OFF;";
 	}
 	catch (const sqlite::sqlite_exception& exception) {
 		Log::GetLog()->error("({} {}) Unexpected DB error creating database: {}", __FILE__, __FUNCTION__, exception.what());
@@ -97,11 +100,14 @@ void LoadDB() {
 		res >> [](uint64 steamid, uint64 tribeid, std::string startdate, std::string lastlogindate, int level, int isnewplayer) {
 			NPP::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NPP::GetDateTime(startdate), 
 				NPP::GetDateTime(lastlogindate), level, isnewplayer);
+			if (isnewplayer == 0) {
+				if (!IsAdmin(steamid)) {
+					if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) < 1) {
+						NPP::pveTribesList.push_back(tribeid);
+					}
+				}
+			}
 		};
-
-		//auto players = NewPlayerProtection::TimerProt::Get().GetAllPlayers();
-		//Log::GetLog()->info("hours: {} .", hours);
-		//Log::GetLog()->info("Players table data loaded. Count: {} records.", players.size());
 	}
 	catch (const sqlite::sqlite_exception& exception) {
 		Log::GetLog()->error("({} {}) Unexpected DB error loading players table: {}", __FILE__, __FUNCTION__, exception.what());
@@ -120,6 +126,11 @@ void LoadDB() {
 	catch (const sqlite::sqlite_exception& exception) {
 		Log::GetLog()->error("({} {}) Unexpected DB error loading pve_tribes table: {}", __FILE__, __FUNCTION__, exception.what());
 	}
+}
+
+void LoadNppPermissionsArray() {
+	NPP::nppAdminArray.Empty();
+	NPP::nppAdminArray.Append(Permissions::GetGroupMembers(NPP::NPPAdminGroup));
 }
 
 inline void LoadConfig() {
@@ -195,5 +206,6 @@ inline void LoadConfig() {
 
 inline void InitConfig() {
 	LoadConfig();
+	LoadNppPermissionsArray();
 	LoadDB();
 }

@@ -47,7 +47,7 @@ namespace NPP {
 	int MessageIntervalInSecs;
 	float MessageTextSize;
 	float MessageDisplayDelay;
-	FLinearColor  MessageColor;
+	FLinearColor MessageColor;
 
 	int MaxLevel;
 	int HoursOfProtection;
@@ -69,6 +69,8 @@ namespace NPP {
 	std::vector<uint64> removedPveTribesList;
 
 	std::vector<uint64> nppTribesList;
+
+	TArray<uint64> nppAdminArray;
 
 	class TimerProt {
 		public:
