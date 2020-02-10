@@ -25,6 +25,20 @@ inline void Disable(AShooterPlayerController* player) {
 				auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
 				auto online_players_ = NPP::TimerProt::Get().GetOnlinePlayers();
 
+				//remove from protected tribes list if found
+				if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) > 0) {
+					const auto iter = std::find_if(
+						NPP::pveTribesList.begin(), NPP::pveTribesList.end(),
+						[tribe_id](const uint64 data) {
+						return data == tribe_id;
+					});
+
+					if (iter != NPP::pveTribesList.end()) {
+						NPP::pveTribesList.erase(std::remove(NPP::pveTribesList.begin(),
+							NPP::pveTribesList.end(), *iter), NPP::pveTribesList.end());
+					}
+				}
+
 				for (const auto& allData : all_players_) {
 					if (allData->tribe_id == tribe_id) {
 						allData->isNewPlayer = 0;
@@ -264,6 +278,20 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 			if (isProtected) {
 				auto online_players_ = NPP::TimerProt::Get().GetOnlinePlayers();
 
+				//remove from protected tribes list if found
+				if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) > 0) {
+					const auto iter = std::find_if(
+						NPP::pveTribesList.begin(), NPP::pveTribesList.end(),
+						[tribe_id](const uint64 data) {
+						return data == tribe_id;
+					});
+
+					if (iter != NPP::pveTribesList.end()) {
+						NPP::pveTribesList.erase(std::remove(NPP::pveTribesList.begin(),
+							NPP::pveTribesList.end(), *iter), NPP::pveTribesList.end());
+					}
+				}
+
 				//loop through tribe members
 				for (const auto& allData : all_players_) {
 					//remove protection
@@ -359,6 +387,11 @@ inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool
 					
 					if (IsAdmin(allData->steam_id)) {
 						continue;
+					}
+
+					//Add to protected tribes list if found
+					if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
+						NPP::nppTribesList.push_back(tribe_id);
 					}
 
 					//add protection & increase start date
@@ -471,6 +504,11 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 						continue;
 					}
 
+					//Add to protected tribes list if found
+					if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
+						NPP::nppTribesList.push_back(tribe_id);
+					}
+
 					//add protection & increase start date
 					if (allData->tribe_id == tribe_id) {
 						allData->isNewPlayer = 1;
@@ -553,6 +591,20 @@ inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPack
 			//if tribe is protected
 			if (isProtected) {
 				auto online_players_ = NPP::TimerProt::Get().GetOnlinePlayers();
+
+				//remove from protected tribes list if found
+				if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) > 0) {
+					const auto iter = std::find_if(
+						NPP::pveTribesList.begin(), NPP::pveTribesList.end(),
+						[tribe_id](const uint64 data) {
+						return data == tribe_id;
+					});
+
+					if (iter != NPP::pveTribesList.end()) {
+						NPP::pveTribesList.erase(std::remove(NPP::pveTribesList.begin(),
+							NPP::pveTribesList.end(), *iter), NPP::pveTribesList.end());
+					}
+				}
 
 				//loop through tribe members
 				for (const auto& allData : all_players_) {
@@ -642,6 +694,11 @@ inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacke
 						continue;
 					}
 
+					//Add to protected tribes list if found
+					if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
+						NPP::nppTribesList.push_back(tribe_id);
+					}
+
 					//add protection & increase start date
 					if (allData->tribe_id == tribe_id) {
 						allData->isNewPlayer = 1;
@@ -719,6 +776,11 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 
 				if (IsAdmin(allData->steam_id)) {
 					continue;
+				}
+
+				//Add to protected tribes list if found
+				if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
+					NPP::nppTribesList.push_back(tribe_id);
 				}
 
 				found = true;
@@ -1039,6 +1101,7 @@ inline void ResetPlayerProtection() {
 		Data->isNewPlayer = 1;
 	}
 
+	ReloadProtectedTribesArray();
 	RemoveExpiredTribesProtection();
 }
 

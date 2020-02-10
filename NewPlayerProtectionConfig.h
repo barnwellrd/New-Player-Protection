@@ -128,6 +128,18 @@ void LoadDB() {
 	}
 }
 
+void ReloadProtectedTribesArray() {
+	auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
+
+	for (const auto& Data : all_players_) {
+		if (!IsAdmin(Data->steam_id)) {
+			if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), Data->tribe_id) < 1) {
+				NPP::pveTribesList.push_back(Data->tribe_id);
+			}
+		}
+	}
+}
+
 void LoadNppPermissionsArray() {
 	NPP::nppAdminArray.Empty();
 	NPP::nppAdminArray.Append(Permissions::GetGroupMembers(NPP::NPPAdminGroup));

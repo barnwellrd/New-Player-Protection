@@ -1,4 +1,5 @@
 #include <API/ARK/Ark.h>
+#include <Timer.h>
 #include "NewPlayerProtection.h"
 #include "NewPlayerProtectionConfig.h"
 #include "NewPlayerProtectionHooks.h"
@@ -19,8 +20,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
 		Init();
-		if (ArkApi::GetApiUtils().GetStatus() == ArkApi::ServerStatus::Ready)
-			LoadNppPermissionsArray();
+
+		// Timer to init Permission members array after Permission.dll has been loaded
+		API::Timer::Get().DelayExecute(&LoadNppPermissionsArray, 10);
 		break;
 	case DLL_PROCESS_DETACH:
 		RemoveHooks();

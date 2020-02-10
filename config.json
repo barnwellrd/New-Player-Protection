@@ -1,7 +1,7 @@
 {
   "General": {
     "DbPathOverride": "",
-    "EnableDebugging" "false"
+    "EnableDebugging": false,
     "PlayerUpdateIntervalInMins": 1,
     "IgnoreAdmins": false,
     "AllowNewPlayersToDamageEnemyStructures": false,
