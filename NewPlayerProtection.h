@@ -7,6 +7,7 @@
  
 namespace NPP {
 	int PlayerUpdateIntervalInMins;
+	bool EnableDebugging;
 	bool IgnoreAdmins;
 	bool AllowNewPlayersToDamageEnemyStructures;
 	bool AllowPlayersToDisableOwnedTribeProtection;

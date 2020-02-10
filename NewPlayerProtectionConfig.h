@@ -146,6 +146,7 @@ inline void LoadConfig() {
 	NPP::next_player_update = std::chrono::system_clock::now();
 
 	NPP::PlayerUpdateIntervalInMins = NPP::config["General"]["PlayerUpdateIntervalInMins"];
+	NPP::EnableDebugging = NPP::config["General"]["EnableDebugging"];
 	NPP::IgnoreAdmins = NPP::config["General"]["IgnoreAdmins"];
 	NPP::AllowNewPlayersToDamageEnemyStructures = NPP::config["General"]["AllowNewPlayersToDamageEnemyStructures"];
 	NPP::AllowPlayersToDisableOwnedTribeProtection = NPP::config["General"]["AllowPlayersToDisableOwnedTribeProtection"];
@@ -206,6 +207,5 @@ inline void LoadConfig() {
 
 inline void InitConfig() {
 	LoadConfig();
-	LoadNppPermissionsArray();
 	LoadDB();
 }

@@ -215,7 +215,9 @@ bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 	db << "END TRANSACTION;";
 	db << "PRAGMA optimize;";
 
-	Log::GetLog()->info("NPP database updated during world save.");
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("NPP database updated during world save.");
+	}
 
 	return result;
 }
@@ -265,8 +267,10 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 									ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
 										NPP::MessageDisplayDelay, nullptr, *NPP::NewPlayerDoingDamageMessage);
 
-									Log::GetLog()->info("NPP Player / Tribe: {} / {} tried to damage a structure of Tribe: {}.", steam_id, attacking_tribeid, 
-										attacked_tribeid);
+									if (NPP::EnableDebugging) {
+										Log::GetLog()->info("NPP Player / Tribe: {} / {} tried to damage a structure of Tribe: {}.", steam_id, attacking_tribeid,
+											attacked_tribeid);
+									}
 								}
 								return 0;
 							}
@@ -276,8 +280,11 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 								if (NPP::TimerProt::Get().IsNextMessageReady(steam_id)) {
 									ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize,
 										NPP::MessageDisplayDelay, nullptr, *NPP::NewPlayerStructureTakingDamageMessage);
-									Log::GetLog()->info("Unprotected Player / Tribe: {} / {} tried to damage a structure of NPP Protected Tribe: {}.", 
-										steam_id, attacking_tribeid, attacked_tribeid);
+
+									if (NPP::EnableDebugging) {
+										Log::GetLog()->info("Unprotected Player / Tribe: {} / {} tried to damage a structure of NPP Protected Tribe: {}.",
+											steam_id, attacking_tribeid, attacked_tribeid);
+									}
 								}
 								return 0;
 							}
@@ -484,6 +491,8 @@ void NPP::TimerProt::UpdateTimer() {
 		NPP::TimerProt::UpdateLevelAndTribe();
 		RemoveExpiredTribesProtection();
 
-		Log::GetLog()->info("PlayerUpdateIntervalInMins timer called: NPP Protections updated.");
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("PlayerUpdateIntervalInMins timer called: NPP Protections updated.");
+		}
 	}
 }

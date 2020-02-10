@@ -40,7 +40,9 @@ inline void Disable(AShooterPlayerController* player) {
 				ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize,
 					NPP::MessageDisplayDelay, nullptr, *NPP::NewPlayerProtectionDisableSuccess);
 
-				Log::GetLog()->info("Player: {} of Tribe: {} disabled own tribes NPP Protection.", steam_id, tribe_id);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Player: {} of Tribe: {} disabled own tribes NPP Protection.", steam_id, tribe_id);
+				}
 			}
 			//else not tribe admin
 			else {
@@ -281,7 +283,9 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NPP::MessageColor, NPP::MessageTextSize, 
 					NPP::MessageDisplayDelay, nullptr, *NPP::AdminTribeProtectionRemoved, tribe_id);
 
-				Log::GetLog()->info("Admin: {} removed NPP Protection of Tribe: {}.", steam_id, tribe_id);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Admin: {} removed NPP Protection of Tribe: {}.", steam_id, tribe_id);
+				}
 			}
 			//tribe not protected 
 			else {
@@ -382,7 +386,9 @@ inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool
 					NPP::MessageDisplayDelay, nullptr, *NPP::AdminResetTribeProtectionSuccess, 
 					NPP::HoursOfProtection, tribe_id);
 
-				Log::GetLog()->info("Admin: {} reset the NPP Protection of Tribe: {}.", steam_id, tribe_id);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Admin: {} reset the NPP Protection of Tribe: {}.", steam_id, tribe_id);
+				}
 			}
 			//tribe not under max level 
 			else {
@@ -489,7 +495,9 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 				ArkApi::GetApiUtils().SendNotification(shooter_controller, NPP::MessageColor, NPP::MessageTextSize, 
 					NPP::MessageDisplayDelay, nullptr, *NPP::AdminResetTribeProtectionSuccess, hours, tribe_id);
 
-				Log::GetLog()->info("Admin: {} added {} hours of NPP Protection to Tribe: {}.", steam_id, hours, tribe_id);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Admin: {} added {} hours of NPP Protection to Tribe: {}.", steam_id, hours, tribe_id);
+				}
 			}
 			//tribe not under max level 
 			else {
@@ -564,7 +572,9 @@ inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPack
 				//display protection removed message
 				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminTribeProtectionRemoved, tribe_id));
 
-				Log::GetLog()->info("RCON removed NPP Protection of Tribe: {}.", tribe_id);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("RCON removed NPP Protection of Tribe: {}.", tribe_id);
+				}
 			}
 			//tribe not protected 
 			else {
@@ -655,7 +665,10 @@ inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacke
 				//display protection added message
 				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminResetTribeProtectionSuccess, 
 					NPP::HoursOfProtection, tribe_id));
-				Log::GetLog()->info("RCON reset NPP Protection of Tribe: {}.", tribe_id);
+
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("RCON reset NPP Protection of Tribe: {}.", tribe_id);
+				}
 			}
 			//tribe not under max level 
 			else {
@@ -752,7 +765,9 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 				//display protection added message
 				rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminResetTribeProtectionSuccess, hours, tribe_id));
 
-				Log::GetLog()->info("RCON added {} hours of NPP Protection to Tribe: {}.", hours, tribe_id);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("RCON added {} hours of NPP Protection to Tribe: {}.", hours, tribe_id);
+				}
 			}
 			//tribe not under max level 
 			else {
@@ -836,7 +851,9 @@ inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
 					ArkApi::GetApiUtils().SendNotification(shooter_controller, NPP::MessageColor, NPP::MessageTextSize, 
 						NPP::MessageDisplayDelay, nullptr, *NPP::AdminPVETribeAddedSuccessMessage, tribe_id);
 
-					Log::GetLog()->info("Admin: {} enabled PVE status of Tribe: {}.", steam_id, tribe_id);
+					if (NPP::EnableDebugging) {
+						Log::GetLog()->info("Admin: {} enabled PVE status of Tribe: {}.", steam_id, tribe_id);
+					}
 
 				}
 				else {
@@ -866,7 +883,9 @@ inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
 					ArkApi::GetApiUtils().SendNotification(shooter_controller, NPP::MessageColor, NPP::MessageTextSize, 
 						NPP::MessageDisplayDelay, nullptr, *NPP::AdminPVETribeRemovedSuccessMessage, tribe_id);
 
-					Log::GetLog()->info("Admin: {} disabled PVE status of Tribe: {}.", steam_id, tribe_id);
+					if (NPP::EnableDebugging) {
+						Log::GetLog()->info("Admin: {} disabled PVE status of Tribe: {}.", steam_id, tribe_id);
+					}
 				}
 				else {
 					//display tribe already removed message
@@ -948,7 +967,9 @@ inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_p
 					//display pve tribe added message
 					rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminPVETribeAddedSuccessMessage, tribe_id));
 
-					Log::GetLog()->info("RCON enabled PVE status of Tribe: {}.", tribe_id);
+					if (NPP::EnableDebugging) {
+						Log::GetLog()->info("RCON enabled PVE status of Tribe: {}.", tribe_id);
+					}
 				}
 				else {
 					//display pve tribe already set message
@@ -974,7 +995,9 @@ inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_p
 						//display tribe removed message
 						rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminPVETribeRemovedSuccessMessage, tribe_id));
 
-						Log::GetLog()->info("RCON disabled PVE status of Tribe: {}.", tribe_id);
+						if (NPP::EnableDebugging) {
+							Log::GetLog()->info("RCON disabled PVE status of Tribe: {}.", tribe_id);
+						}
 					}
 					else {
 						//display tribe already removed message
