@@ -87,14 +87,14 @@ void RemoveExpiredTribesProtection() {
 							//remove from protected tribes list if found
 							if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), moreAllData->tribe_id) > 0) {
 								const auto iter = std::find_if(
-									NPP::pveTribesList.begin(), NPP::pveTribesList.end(),
+									NPP::nppTribesList.begin(), NPP::nppTribesList.end(),
 									[tribe_id](const uint64 data) {
 									return data == tribe_id;
 								});
 
-								if (iter != NPP::pveTribesList.end()) {
-									NPP::pveTribesList.erase(std::remove(NPP::pveTribesList.begin(),
-										NPP::pveTribesList.end(), *iter), NPP::pveTribesList.end());
+								if (iter != NPP::nppTribesList.end()) {
+									NPP::nppTribesList.erase(std::remove(NPP::nppTribesList.begin(),
+										NPP::nppTribesList.end(), *iter), NPP::nppTribesList.end());
 								}
 							}
 						}
@@ -141,7 +141,17 @@ void UpdatePVETribeDB(uint64 tribe_id, bool stillProtected) {
 			<< tribe_id << stillProtected;
 
 		if (!stillProtected) {
-			NPP::removedPveTribesList.clear();
+			// remove tribe from removed pve tribe array
+			const auto iter = std::find_if(
+				NPP::removedPveTribesList.begin(), NPP::removedPveTribesList.end(),
+				[tribe_id](const uint64& data) {
+				return data == tribe_id;
+			});
+
+			if (iter != NPP::removedPveTribesList.end()) {
+				NPP::removedPveTribesList.erase(std::remove(NPP::removedPveTribesList.begin(), NPP::removedPveTribesList.end(), *iter), NPP::removedPveTribesList.end());
+			}
+
 			NPP::pveTribesList.clear();
 
 			try {
@@ -162,7 +172,8 @@ void UpdatePVETribeDB(uint64 tribe_id, bool stillProtected) {
 }
 
 bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlayerController* new_player, UPrimalPlayerData* player_data, 
-	AShooterCharacter* player_character, bool is_from_login) {
+		AShooterCharacter* player_character, bool is_from_login) {
+
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(new_player);
 
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -211,6 +222,7 @@ bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 	for (const auto& tribe_id : NPP::removedPveTribesList) {
 		UpdatePVETribeDB(tribe_id, 0);
 	}
+	NPP::removedPveTribesList.clear();
 
 	db << "END TRANSACTION;";
 	db << "PRAGMA optimize;";

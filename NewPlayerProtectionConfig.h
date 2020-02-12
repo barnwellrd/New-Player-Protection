@@ -91,6 +91,9 @@ void LoadDB() {
 	}
 	
 	try {
+		NPP::nppTribesList.clear();
+		NPP::TimerProt::Get().GetAllPlayers().clear();
+
 		std::string hours = "SELECT * FROM Players where Last_Login_DateTime > date('now', '-";
 		hours.append(std::to_string(NPP::NPPPlayerDecayInHours));
 		hours.append(" hour');");
@@ -103,7 +106,7 @@ void LoadDB() {
 			if (isnewplayer == 0) {
 				if (!IsAdmin(steamid)) {
 					if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) < 1) {
-						NPP::pveTribesList.push_back(tribeid);
+						NPP::nppTribesList.push_back(tribeid);
 					}
 				}
 			}
@@ -114,6 +117,7 @@ void LoadDB() {
 	}
 
 	try {
+		NPP::pveTribesList.clear();
 		auto res = db << "SELECT TribeId FROM PVE_Tribes where Is_Protected = 1;";
 
 		res >> [](uint64 tribeid) {
@@ -134,7 +138,7 @@ void ReloadProtectedTribesArray() {
 	for (const auto& Data : all_players_) {
 		if (!IsAdmin(Data->steam_id)) {
 			if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), Data->tribe_id) < 1) {
-				NPP::pveTribesList.push_back(Data->tribe_id);
+				NPP::nppTribesList.push_back(Data->tribe_id);
 			}
 		}
 	}
@@ -143,6 +147,10 @@ void ReloadProtectedTribesArray() {
 void LoadNppPermissionsArray() {
 	NPP::nppAdminArray.Empty();
 	NPP::nppAdminArray.Append(Permissions::GetGroupMembers(NPP::NPPAdminGroup));
+	if (NPP::FirstLoad) {
+		LoadDB();
+		NPP::FirstLoad = false;
+	}
 }
 
 inline void LoadConfig() {

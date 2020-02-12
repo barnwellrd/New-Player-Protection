@@ -73,6 +73,8 @@ namespace NPP {
 
 	TArray<uint64> nppAdminArray;
 
+	bool FirstLoad = true;
+
 	class TimerProt {
 		public:
 			static TimerProt& Get();

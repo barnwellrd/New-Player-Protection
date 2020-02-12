@@ -28,14 +28,14 @@ inline void Disable(AShooterPlayerController* player) {
 				//remove from protected tribes list if found
 				if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) > 0) {
 					const auto iter = std::find_if(
-						NPP::pveTribesList.begin(), NPP::pveTribesList.end(),
+						NPP::nppTribesList.begin(), NPP::nppTribesList.end(),
 						[tribe_id](const uint64 data) {
 						return data == tribe_id;
 					});
 
-					if (iter != NPP::pveTribesList.end()) {
-						NPP::pveTribesList.erase(std::remove(NPP::pveTribesList.begin(),
-							NPP::pveTribesList.end(), *iter), NPP::pveTribesList.end());
+					if (iter != NPP::nppTribesList.end()) {
+						NPP::nppTribesList.erase(std::remove(NPP::nppTribesList.begin(),
+							NPP::nppTribesList.end(), *iter), NPP::nppTribesList.end());
 					}
 				}
 
@@ -266,6 +266,7 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 		for (const auto& allData : all_players_) {
 			if (allData->tribe_id == tribe_id) {
 				found = true;
+
 				if (allData->isNewPlayer == 1) {
 					isProtected = true;
 					break;
@@ -281,14 +282,14 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 				//remove from protected tribes list if found
 				if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) > 0) {
 					const auto iter = std::find_if(
-						NPP::pveTribesList.begin(), NPP::pveTribesList.end(),
+						NPP::nppTribesList.begin(), NPP::nppTribesList.end(),
 						[tribe_id](const uint64 data) {
 						return data == tribe_id;
 					});
 
-					if (iter != NPP::pveTribesList.end()) {
-						NPP::pveTribesList.erase(std::remove(NPP::pveTribesList.begin(),
-							NPP::pveTribesList.end(), *iter), NPP::pveTribesList.end());
+					if (iter != NPP::nppTribesList.end()) {
+						NPP::nppTribesList.erase(std::remove(NPP::nppTribesList.begin(),
+							NPP::nppTribesList.end(), *iter), NPP::nppTribesList.end());
 					}
 				}
 
@@ -369,6 +370,7 @@ inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool
 				}
 
 				found = true;
+
 				if (allData->level >= NPP::MaxLevel) {
 					underMaxLevel = false;
 					break;
@@ -484,6 +486,7 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 				}
 
 				found = true;
+
 				if (allData->level >= NPP::MaxLevel) {
 					underMaxLevel = false;
 					break;
@@ -580,6 +583,7 @@ inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPack
 		for (const auto& allData : all_players_) {
 			if (allData->tribe_id == tribe_id) {
 				found = true;
+
 				if (allData->isNewPlayer == 1) {
 					isProtected = true;
 					break;
@@ -595,14 +599,14 @@ inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPack
 				//remove from protected tribes list if found
 				if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) > 0) {
 					const auto iter = std::find_if(
-						NPP::pveTribesList.begin(), NPP::pveTribesList.end(),
+						NPP::nppTribesList.begin(), NPP::nppTribesList.end(),
 						[tribe_id](const uint64 data) {
 						return data == tribe_id;
 					});
 
-					if (iter != NPP::pveTribesList.end()) {
-						NPP::pveTribesList.erase(std::remove(NPP::pveTribesList.begin(),
-							NPP::pveTribesList.end(), *iter), NPP::pveTribesList.end());
+					if (iter != NPP::nppTribesList.end()) {
+						NPP::nppTribesList.erase(std::remove(NPP::nppTribesList.begin(),
+							NPP::nppTribesList.end(), *iter), NPP::nppTribesList.end());
 					}
 				}
 
@@ -674,6 +678,7 @@ inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacke
 
 			if (allData->tribe_id == tribe_id) {
 				found = true;
+
 				if (allData->level >= NPP::MaxLevel) {
 					underMaxLevel = false;
 					break;
@@ -784,6 +789,7 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 				}
 
 				found = true;
+
 				if (allData->level >= NPP::MaxLevel) {
 					underMaxLevel = false;
 					break;
