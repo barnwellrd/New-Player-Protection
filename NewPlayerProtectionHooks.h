@@ -179,19 +179,16 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 	srand(std::chrono::system_clock::to_time_t(now));
 
-	uint64 team_id = rand() % 10000 + 11100000;
+	uint64 team_id = new_player->TargetingTeamField();
 
-	AShooterPlayerState* ASPS = static_cast<AShooterPlayerState*>(new_player->PlayerStateField());
+	if (team_id != 0) {
 
-	if (ASPS->TargetingTeamField() != 0) {
-		team_id = ASPS->TargetingTeamField();
+		if (!IsPlayerExists(steam_id)) {
+			NPP::TimerProt::Get().AddNewPlayer(steam_id, team_id);
+		}
+
+		NPP::TimerProt::Get().AddOnlinePlayer(steam_id, team_id);
 	}
-
-	if (!IsPlayerExists(steam_id)) {
-		NPP::TimerProt::Get().AddNewPlayer(steam_id, team_id);
-	}
-
-	NPP::TimerProt::Get().AddOnlinePlayer(steam_id, team_id);
 
 	return AShooterGameMode_HandleNewPlayer_original(_this, new_player, player_data, player_character, is_from_login);
 }

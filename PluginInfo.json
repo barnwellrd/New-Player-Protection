@@ -1,7 +1,7 @@
 {
   "FullName": "New Player Protection Plugin",
   "Description": "Gives new players structure protection.",
-  "Version": 1.85,
+  "Version": 1.86,
   "MinApiVersion": 3.2,
   "ResourceId": 50
 }

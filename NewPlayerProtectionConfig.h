@@ -117,7 +117,9 @@ void LoadDB() {
 			NPP::pveTribesList.push_back(tribeid);
 		};
 
-		Log::GetLog()->info("PVE_Tribes table data loaded.");
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("PVE_Tribes table data loaded.");
+		}
 
 	}
 	catch (const sqlite::sqlite_exception& exception) {
