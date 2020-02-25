@@ -103,13 +103,6 @@ void LoadDB() {
 		res >> [](uint64 steamid, uint64 tribeid, std::string startdate, std::string lastlogindate, int level, int isnewplayer) {
 			NPP::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NPP::GetDateTime(startdate), 
 				NPP::GetDateTime(lastlogindate), level, isnewplayer);
-			if (isnewplayer == 0) {
-				if (!IsAdmin(steamid)) {
-					if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) < 1) {
-						NPP::nppTribesList.push_back(tribeid);
-					}
-				}
-			}
 		};
 	}
 	catch (const sqlite::sqlite_exception& exception) {
@@ -134,6 +127,8 @@ void LoadDB() {
 
 void ReloadProtectedTribesArray() {
 	auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
+
+	NPP::nppTribesList.clear();
 
 	for (const auto& Data : all_players_) {
 		if (!IsAdmin(Data->steam_id)) {

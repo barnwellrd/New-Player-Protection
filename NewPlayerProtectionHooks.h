@@ -43,7 +43,7 @@ bool IsPVETribe(uint64 tribeid) {
 bool IsTribeProtected(uint64 tribeid) {
 	if (tribeid > 100000) {
 		//check a vector of tribes that lists protected tribes
-		return IsPVETribe(tribeid) ? true : std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) > 0;
+		return IsPVETribe(tribeid) ? true : (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) > 0);
 	}
 	return false;
 }
@@ -376,6 +376,13 @@ void NPP::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chro
 		return;
 
 	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, startDateTime, lastLoginDateTime, level, isNewPlayer));
+	if (isNewPlayer == 1) {
+		if (!IsAdmin(steam_id)) {
+			if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
+				NPP::nppTribesList.push_back(tribe_id);
+			}
+		}
+	}
 }
 
 void NPP::TimerProt::AddNewPlayer(uint64 steam_id, uint64 tribe_id) {
@@ -388,6 +395,11 @@ void NPP::TimerProt::AddNewPlayer(uint64 steam_id, uint64 tribe_id) {
 	if (iter != all_players_.end())
 		return;
 	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, std::chrono::system_clock::now(), std::chrono::system_clock::now(), 1, 1));
+	if (!IsAdmin(steam_id)) {
+		if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
+			NPP::nppTribesList.push_back(tribe_id);
+		}
+	}
 }
 
 void NPP::TimerProt::AddOnlinePlayer(uint64 steam_id, uint64 team_id) {

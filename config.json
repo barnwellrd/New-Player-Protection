@@ -2,7 +2,7 @@
   "General": {
     "DbPathOverride": "",
     "EnableDebugging": false,
-    "PlayerUpdateIntervalInMins": 1,
+    "PlayerUpdateIntervalInMins": 10,
     "IgnoreAdmins": false,
     "AllowNewPlayersToDamageEnemyStructures": false,
     "AllowPlayersToDisableOwnedTribeProtection": true,
