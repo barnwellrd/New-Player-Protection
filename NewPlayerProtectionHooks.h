@@ -37,7 +37,7 @@ bool IsPlayerExists(uint64 steam_id) {
 }
 
 bool IsPVETribe(uint64 tribeid) {
-	return std::count(NPP::pveTribesList.begin(), NPP::pveTribesList.end(), tribeid) > 0;
+	return (std::count(NPP::pveTribesList.begin(), NPP::pveTribesList.end(), tribeid) > 0);
 }
 
 bool IsTribeProtected(uint64 tribeid) {
