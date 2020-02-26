@@ -104,6 +104,9 @@ void LoadDB() {
 			NPP::TimerProt::Get().AddPlayerFromDB(steamid, tribeid, NPP::GetDateTime(startdate), 
 				NPP::GetDateTime(lastlogindate), level, isnewplayer);
 		};
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Players table data loaded.");
+		}
 	}
 	catch (const sqlite::sqlite_exception& exception) {
 		Log::GetLog()->error("({} {}) Unexpected DB error loading players table: {}", __FILE__, __FUNCTION__, exception.what());

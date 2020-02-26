@@ -266,7 +266,6 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 						}
 
-
 						if (IsPlayerProtected(player)) {
 							if (!NPP::AllowNewPlayersToDamageEnemyStructures) {
 								if (attacked_tribeid < 100000 || attacked_tribeid == attacking_tribeid) {
@@ -461,6 +460,8 @@ bool NPP::TimerProt::IsNextMessageReady(uint64 steam_id) {
 
 void NPP::TimerProt::UpdateLevelAndTribe() {
 
+	NPP::nppTribesList.clear();
+
 	for (const auto& data : online_players_) {
 
 		AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
@@ -485,10 +486,13 @@ void NPP::TimerProt::UpdateLevelAndTribe() {
 				break;
 			}
 		}
+
+		if (!IsAdmin(data->steam_id) && data->isNewPlayer == 1) {
+			if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
+				NPP::nppTribesList.push_back(tribe_id);
+			}
+		}
 	}
-
-
-	
 }
 
 std::vector<std::shared_ptr<NPP::TimerProt::OnlinePlayersData>> NPP::TimerProt::GetOnlinePlayers() {
@@ -513,6 +517,77 @@ void NPP::TimerProt::UpdateTimer() {
 		RemoveExpiredTribesProtection();
 
 		if (NPP::EnableDebugging) {
+			auto all_players_ = NPP::TimerProt::GetAllPlayers();
+			auto online_players_ = NPP::TimerProt::GetOnlinePlayers();
+
+			Log::GetLog()->info(" ");
+			Log::GetLog()->info("----------------------------------------------------------------------");
+
+			Log::GetLog()->info("all_players_:");
+			for (std::shared_ptr<AllPlayerData>& data : all_players_) {
+				Log::GetLog()->info("steam_id:          {}", data->steam_id);
+				Log::GetLog()->info("tribe_id:          {}", data->tribe_id);
+				Log::GetLog()->info("level:             {}", data->level);
+				Log::GetLog()->info("isNewPlayer:       {}", data->isNewPlayer);
+				Log::GetLog()->info("startDateTime:     {}", GetTimestamp(data->startDateTime));
+				Log::GetLog()->info("lastLoginDateTime: {}", GetTimestamp(data->lastLoginDateTime));
+				Log::GetLog()->info("----------------------------------------------");
+			}
+		
+			Log::GetLog()->info("----------------------------------------------------------------------");
+			Log::GetLog()->info(" ");
+			Log::GetLog()->info("----------------------------------------------------------------------");
+
+			Log::GetLog()->info("online_players_:");
+			for (std::shared_ptr<OnlinePlayersData>& data : online_players_) {
+				Log::GetLog()->info("steam_id:          {}", data->steam_id);
+				Log::GetLog()->info("tribe_id:          {}", data->tribe_id);
+				Log::GetLog()->info("level:             {}", data->level);
+				Log::GetLog()->info("isNewPlayer:       {}", data->isNewPlayer);
+				Log::GetLog()->info("startDateTime:     {}", GetTimestamp(data->startDateTime));
+				Log::GetLog()->info("lastLoginDateTime: {}", GetTimestamp(data->lastLoginDateTime));
+				Log::GetLog()->info("----------------------------------------------");
+			}
+
+			Log::GetLog()->info("----------------------------------------------------------------------");
+			Log::GetLog()->info(" ");
+			Log::GetLog()->info("----------------------------------------------------------------------");
+
+			Log::GetLog()->info("nppTribesList:");
+			for (uint64 data : nppTribesList) {
+				Log::GetLog()->info(data);
+			}
+
+			Log::GetLog()->info("----------------------------------------------------------------------");
+			Log::GetLog()->info(" ");
+			Log::GetLog()->info("----------------------------------------------------------------------");
+
+			Log::GetLog()->info("pveTribesList:");
+			for (uint64 data : pveTribesList) {
+				Log::GetLog()->info(data);
+			}
+
+			Log::GetLog()->info("----------------------------------------------------------------------");
+			Log::GetLog()->info(" ");
+			Log::GetLog()->info("----------------------------------------------------------------------");
+
+			Log::GetLog()->info("StructureExemptions:");
+			for (std::string data : StructureExemptions) {
+				Log::GetLog()->info(data);
+			}
+
+			Log::GetLog()->info("----------------------------------------------------------------------");
+			Log::GetLog()->info(" ");
+			Log::GetLog()->info("----------------------------------------------------------------------");
+
+			Log::GetLog()->info("nppAdminArray:");
+			for (uint64 data : nppAdminArray) {
+				Log::GetLog()->info(data);
+			}
+
+			Log::GetLog()->info("----------------------------------------------------------------------");
+			Log::GetLog()->info(" ");
+
 			Log::GetLog()->info("PlayerUpdateIntervalInMins timer called: NPP Protections updated.");
 		}
 	}
