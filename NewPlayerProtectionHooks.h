@@ -460,8 +460,6 @@ bool NPP::TimerProt::IsNextMessageReady(uint64 steam_id) {
 
 void NPP::TimerProt::UpdateLevelAndTribe() {
 
-	NPP::nppTribesList.clear();
-
 	for (const auto& data : online_players_) {
 
 		AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
@@ -486,10 +484,14 @@ void NPP::TimerProt::UpdateLevelAndTribe() {
 				break;
 			}
 		}
+	}
 
+	NPP::nppTribesList.clear();
+
+	for (const auto& data : all_players_) {
 		if (!IsAdmin(data->steam_id) && data->isNewPlayer == 1) {
-			if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
-				NPP::nppTribesList.push_back(tribe_id);
+			if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), data->tribe_id) < 1) {
+				NPP::nppTribesList.push_back(data->tribe_id);
 			}
 		}
 	}
