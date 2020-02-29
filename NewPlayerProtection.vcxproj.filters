@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Lib">
-      <UniqueIdentifier>{cc4a1cf1-a958-4582-a0cf-2c9bf53f6364}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Includes">
       <UniqueIdentifier>{3db46802-bcd7-4480-b251-353e5af8eb39}</UniqueIdentifier>
     </Filter>
@@ -43,17 +40,6 @@
     <ClCompile Include="sqlite3.c">
       <Filter>Header Files\Includes</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="Lib\ArkApi.lib">
-      <Filter>Lib</Filter>
-    </Library>
-    <Library Include="Lib\libMinHook.x64.lib">
-      <Filter>Lib</Filter>
-    </Library>
-    <Library Include="Lib\Permissions.lib">
-      <Filter>Lib</Filter>
-    </Library>
   </ItemGroup>
   <ItemGroup>
     <None Include="config.json">

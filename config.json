@@ -1,7 +1,8 @@
 {
   "General": {
     "DbPathOverride": "",
-    "PlayerUpdateIntervalInMins": 1,
+    "EnableDebugging": false,
+    "PlayerUpdateIntervalInMins": 10,
     "IgnoreAdmins": false,
     "AllowNewPlayersToDamageEnemyStructures": false,
     "AllowPlayersToDisableOwnedTribeProtection": true,
@@ -26,6 +27,7 @@
     "PVEDisablePlayerMessage": "PVE player can not disable their own protection",
     "PVEStatusMessage": "Your tribe is a PVE tribe",
     "NotAStructureMessage": "This target is not a structure!",
+    "IsAdminTribe": "Everyone in this tribe is a NPPAdmin.",
 
     "AdminNoTribeExistsMessage": "No tribe with that ID exists; Tribe: {}",
     "AdminTribeProtectionRemoved": "Protection has been removed for Tribe: {}",
