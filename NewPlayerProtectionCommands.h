@@ -161,7 +161,7 @@ inline void GetTribeID(AShooterPlayerController* player) {
 		return;
 
 	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
-		false, false);
+		false, false, false);
 
 	if (Actor && Actor->IsA(APrimalStructure::GetPrivateStaticClass())) {
 		APrimalStructure* Structure = static_cast<APrimalStructure*>(Actor);
@@ -185,7 +185,7 @@ inline void GetTargetPath(AShooterPlayerController* player) {
 
 	//get aimed target
 	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
-		false, false);
+		false, false, false);
 
 	//check if target is a dino or structure
 	if (Actor && Actor->IsA(APrimalStructure::GetPrivateStaticClass())) {
