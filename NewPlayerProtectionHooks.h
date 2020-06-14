@@ -236,6 +236,35 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 	if (_this) {
 		if (!IsExemptStructure(_this)) {
 			uint64 attacked_tribeid = _this->TargetingTeamField();
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->warn("Has DamageCauser: {}.", DamageCauser ? "true" : "false");
+				if (DamageCauser) {
+					FName Dname = DamageCauser->NameField();
+					FString name = "";
+					Dname.ToString(&name);
+					Log::GetLog()->warn("DamageCauser Name: {}.", name.ToString());
+					if (DamageCauser->IsA(APrimalDinoCharacter::GetPrivateStaticClass())) {
+						Log::GetLog()->warn("DamageCauser is a APrimalDinoCharacter.");
+					}
+					if (DamageCauser->IsA(AShooterPlayerController::GetPrivateStaticClass())) {
+						Log::GetLog()->warn("DamageCauser is a AShooterPlayerController.");
+					}
+				}
+
+				Log::GetLog()->warn("Has EventInstigator: {}.", EventInstigator ? "true" : "false");
+				if (EventInstigator) {
+					FName Dname = EventInstigator->NameField();
+					FString name = "";
+					Dname.ToString(&name);
+					Log::GetLog()->warn("EventInstigator Name: {}.", name.ToString());
+					if (EventInstigator->IsA(APrimalDinoCharacter::GetPrivateStaticClass())) {
+						Log::GetLog()->warn("EventInstigator is a APrimalDinoCharacter.");
+					}
+					if (EventInstigator->IsA(AShooterPlayerController::GetPrivateStaticClass())) {
+						Log::GetLog()->warn("EventInstigator is a AShooterPlayerController.");
+					}
+				}
+			}
 
 			//DamageCauser != NULL
 			if (DamageCauser) {
@@ -243,6 +272,8 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 
 				//EventInstigator != NULL 
 				if (EventInstigator) {
+
+					//EventInstigator is a dino
 					if (EventInstigator->IsA(APrimalDinoCharacter::GetPrivateStaticClass())) {
 						if (NPP::AllowWildCorruptedDinoDamage && EventInstigator->TargetingTeamField() < 10000) {
 							FString dinoName;
@@ -254,6 +285,33 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 
 						if (NPP::AllowWildDinoDamage && EventInstigator->TargetingTeamField() < 10000) {
 							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+						}
+
+						// Dino is in a tribe
+						if (EventInstigator->TargetingTeamField() > 10000 && 
+								(IsTribeProtected(EventInstigator->TargetingTeamField()) || IsTribeProtected(_this->TargetingTeamField()))) {
+							return 0;
+						}
+					}
+
+					//DamageCauser is a dino
+					if (DamageCauser->IsA(APrimalDinoCharacter::GetPrivateStaticClass())) {
+						if (NPP::AllowWildCorruptedDinoDamage && DamageCauser->TargetingTeamField() < 10000) {
+							FString dinoName;
+							DamageCauser->NameField().ToString(&dinoName);
+							if (dinoName.Contains("Corrupt")) {
+								return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+							}
+						}
+
+						if (NPP::AllowWildDinoDamage && DamageCauser->TargetingTeamField() < 10000) {
+							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
+						}
+
+						// Dino is in a tribe
+						if (DamageCauser->TargetingTeamField() > 10000 &&
+								(IsTribeProtected(DamageCauser->TargetingTeamField()) || IsTribeProtected(_this->TargetingTeamField()))) {
+							return 0;
 						}
 					}
 					
