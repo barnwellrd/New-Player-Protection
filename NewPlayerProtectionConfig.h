@@ -145,9 +145,15 @@ void ReloadProtectedTribesArray() {
 }
 
 void LoadNppPermissionsArray() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->warn("Executing LoadNppPermissionsArray...");
+	}
 	NPP::nppAdminArray.Empty();
 	NPP::nppAdminArray.Append(Permissions::GetGroupMembers(NPP::NPPAdminGroup));
 	if (NPP::FirstLoad) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->warn("Executing LoadNppPermissionsArray. First call, so loading the DB...");
+		}
 		LoadDB();
 		NPP::FirstLoad = false;
 	}

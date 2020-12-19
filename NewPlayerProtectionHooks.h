@@ -568,9 +568,11 @@ void NPP::TimerProt::UpdateTimer() {
 
 	auto diff = std::chrono::duration_cast<std::chrono::seconds>(NPP::next_player_update - now_time);
 
-	LoadNppPermissionsArray();
-
 	if (diff.count() <= 0) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->warn("Running NPP update tasks...");
+		}
+		LoadNppPermissionsArray();
 		auto player_interval = std::chrono::minutes(player_update_interval_);
 		NPP::next_player_update = now_time + player_interval;
 		NPP::TimerProt::UpdateLevelAndTribe();
@@ -648,7 +650,7 @@ void NPP::TimerProt::UpdateTimer() {
 			Log::GetLog()->info("----------------------------------------------------------------------");
 			Log::GetLog()->info(" ");
 
-			Log::GetLog()->info("PlayerUpdateIntervalInMins timer called: NPP Protections updated.");
+			Log::GetLog()->info("PlayerUpdateIntervalInMins timer finished: NPP Protections updated.");
 		}
 	}
 }
