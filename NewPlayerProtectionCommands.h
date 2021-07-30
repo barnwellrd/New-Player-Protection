@@ -160,7 +160,7 @@ inline void GetTribeID(AShooterPlayerController* player) {
 	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
 		return;
 
-	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
+	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECollisionChannel::ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
 		false, false, false);
 
 	if (Actor && Actor->IsA(APrimalStructure::GetPrivateStaticClass())) {
@@ -184,7 +184,7 @@ inline void GetTargetPath(AShooterPlayerController* player) {
 		return;
 
 	//get aimed target
-	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
+	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECollisionChannel::ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
 		false, false, false);
 
 	//check if target is a dino or structure

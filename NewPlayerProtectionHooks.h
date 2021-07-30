@@ -176,9 +176,6 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(new_player);
 
-	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-	srand(std::chrono::system_clock::to_time_t(now));
-
 	uint64 team_id = new_player->TargetingTeamField();
 
 	if (team_id != 0) {
