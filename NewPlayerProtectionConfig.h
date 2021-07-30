@@ -1,6 +1,6 @@
 #pragma once
 #include <fstream>
-#include <Permissions.h>
+#include <ArkPermissions.h>
 
 std::string NPP::GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime) {
 	auto ttime_t = std::chrono::system_clock::to_time_t(datetime);
