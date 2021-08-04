@@ -6,21 +6,41 @@ DECLARE_HOOK(AShooterGameMode_SaveWorld, bool, AShooterGameMode*);
 DECLARE_HOOK(APrimalStructure_TakeDamage, float, APrimalStructure*, float, FDamageEvent*, AController*, AActor*);
 
 void InitHooks() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	ArkApi::GetHooks().SetHook("AShooterGameMode.HandleNewPlayer_Implementation", &Hook_AShooterGameMode_HandleNewPlayer, 
 		&AShooterGameMode_HandleNewPlayer_original);
 	ArkApi::GetHooks().SetHook("AShooterGameMode.Logout", &Hook_AShooterGameMode_Logout, &AShooterGameMode_Logout_original);
 	ArkApi::GetHooks().SetHook("AShooterGameMode.SaveWorld", &Hook_AShooterGameMode_SaveWorld, &AShooterGameMode_SaveWorld_original);
 	ArkApi::GetHooks().SetHook("APrimalStructure.TakeDamage", &Hook_APrimalStructure_TakeDamage, &APrimalStructure_TakeDamage_original);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 void RemoveHooks() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.HandleNewPlayer_Implementation", &Hook_AShooterGameMode_HandleNewPlayer);
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.Logout", &Hook_AShooterGameMode_Logout);
 	ArkApi::GetHooks().DisableHook("AShooterGameMode.SaveWorld", &Hook_AShooterGameMode_SaveWorld);
 	ArkApi::GetHooks().DisableHook("APrimalStructure.TakeDamage", &Hook_APrimalStructure_TakeDamage);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 bool IsPlayerExists(uint64 steam_id) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	int exists = 0;
 	auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
 
@@ -33,35 +53,78 @@ bool IsPlayerExists(uint64 steam_id) {
 	if (iter != all_players_.end()) {
 		exists = 1;
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return exists;
 }
 
 bool IsPVETribe(uint64 tribeid) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return (std::count(NPP::pveTribesList.begin(), NPP::pveTribesList.end(), tribeid) > 0);
 }
 
 bool IsTribeProtected(uint64 tribeid) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	if (tribeid > 100000) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		//check a vector of tribes that lists protected tribes
 		return IsPVETribe(tribeid) ? true : (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribeid) > 0);
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return false;
 }
 
 bool IsExemptStructure(AActor* actor) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	if (NPP::StructureExemptions.size() > 0) {
 		APrimalStructure* structure = static_cast<APrimalStructure*>(actor);
 		FString stuctPath;
 		stuctPath = NPP::GetBlueprint(structure);
 
 		if (std::count(NPP::StructureExemptions.begin(), NPP::StructureExemptions.end(), stuctPath.ToString())) {
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return true;
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return false;
 }
 
 void RemoveExpiredTribesProtection() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	auto protectionInHours = std::chrono::hours(NPP::HoursOfProtection);
 	auto now = std::chrono::system_clock::now();
 	auto expireTime = now - protectionInHours;
@@ -112,15 +175,32 @@ void RemoveExpiredTribesProtection() {
 			}
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 bool IsPlayerProtected(APlayerController * PC) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(PC);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	// If not admin, return if in a protected tribe, if admin, return unprotected
 	return !IsAdmin(steam_id) ? IsTribeProtected(PC->TargetingTeamField()) : false;
 }
 
 void UpdatePlayerDB(std::shared_ptr<NPP::TimerProt::AllPlayerData> data) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	auto& db = NPP::GetDB();
 
 	try {
@@ -131,9 +211,17 @@ void UpdatePlayerDB(std::shared_ptr<NPP::TimerProt::AllPlayerData> data) {
 	catch (const sqlite::sqlite_exception& exception) {
 		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 void UpdatePVETribeDB(uint64 tribe_id, bool stillProtected) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	auto& db = NPP::GetDB();
 
 	try {
@@ -169,10 +257,17 @@ void UpdatePVETribeDB(uint64 tribe_id, bool stillProtected) {
 	catch (const sqlite::sqlite_exception& exception) {
 		Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlayerController* new_player, UPrimalPlayerData* player_data, 
 		AShooterCharacter* player_character, bool is_from_login) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
 
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(new_player);
 
@@ -187,17 +282,33 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 		NPP::TimerProt::Get().AddOnlinePlayer(steam_id, team_id);
 	}
 
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return AShooterGameMode_HandleNewPlayer_original(_this, new_player, player_data, player_character, is_from_login);
 }
 
 void Hook_AShooterGameMode_Logout(AShooterGameMode* _this, AController* exiting) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	// Remove player from the online list
 	const uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(exiting);
 	NPP::TimerProt::TimerProt::Get().RemovePlayer(steam_id);
 	AShooterGameMode_Logout_original(_this, exiting);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	bool result = AShooterGameMode_SaveWorld_original(GameMode);
 
 	auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
@@ -225,40 +336,48 @@ bool Hook_AShooterGameMode_SaveWorld(AShooterGameMode* GameMode) {
 		Log::GetLog()->info("NPP database updated during world save.");
 	}
 
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return result;
 }
 
 float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FDamageEvent* DamageEvent, AController* EventInstigator, AActor* DamageCauser) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	// APrimalStructure != NULL
 	if (_this) {
 		if (!IsExemptStructure(_this)) {
 			uint64 attacked_tribeid = _this->TargetingTeamField();
 			if (NPP::EnableDebugging) {
-				Log::GetLog()->warn("Has DamageCauser: {}.", DamageCauser ? "true" : "false");
+				Log::GetLog()->info("Has DamageCauser: {}.", DamageCauser ? "true" : "false");
 				if (DamageCauser) {
 					FName Dname = DamageCauser->NameField();
 					FString name = "";
 					Dname.ToString(&name);
-					Log::GetLog()->warn("DamageCauser Name: {}.", name.ToString());
+					Log::GetLog()->info("DamageCauser Name: {}.", name.ToString());
 					if (DamageCauser->IsA(APrimalDinoCharacter::GetPrivateStaticClass())) {
-						Log::GetLog()->warn("DamageCauser is a APrimalDinoCharacter.");
+						Log::GetLog()->info("DamageCauser is a APrimalDinoCharacter.");
 					}
 					if (DamageCauser->IsA(AShooterPlayerController::GetPrivateStaticClass())) {
-						Log::GetLog()->warn("DamageCauser is a AShooterPlayerController.");
+						Log::GetLog()->info("DamageCauser is a AShooterPlayerController.");
 					}
 				}
 
-				Log::GetLog()->warn("Has EventInstigator: {}.", EventInstigator ? "true" : "false");
+				Log::GetLog()->info("Has EventInstigator: {}.", EventInstigator ? "true" : "false");
 				if (EventInstigator) {
 					FName Dname = EventInstigator->NameField();
 					FString name = "";
 					Dname.ToString(&name);
-					Log::GetLog()->warn("EventInstigator Name: {}.", name.ToString());
+					Log::GetLog()->info("EventInstigator Name: {}.", name.ToString());
 					if (EventInstigator->IsA(APrimalDinoCharacter::GetPrivateStaticClass())) {
-						Log::GetLog()->warn("EventInstigator is a APrimalDinoCharacter.");
+						Log::GetLog()->info("EventInstigator is a APrimalDinoCharacter.");
 					}
 					if (EventInstigator->IsA(AShooterPlayerController::GetPrivateStaticClass())) {
-						Log::GetLog()->warn("EventInstigator is a AShooterPlayerController.");
+						Log::GetLog()->info("EventInstigator is a AShooterPlayerController.");
 					}
 				}
 			}
@@ -276,17 +395,29 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 							FString dinoName;
 							EventInstigator->NameField().ToString(&dinoName);
 								if (dinoName.Contains("Corrupt")) {
+									if (NPP::EnableDebugging) {
+										Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+									}
+
 									return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 								}
 						}
 
 						if (NPP::AllowWildDinoDamage && EventInstigator->TargetingTeamField() < 10000) {
+							if (NPP::EnableDebugging) {
+								Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+							}
+
 							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 						}
 
 						// Dino is in a tribe
 						if (EventInstigator->TargetingTeamField() > 10000 && 
 								(IsTribeProtected(EventInstigator->TargetingTeamField()) || IsTribeProtected(_this->TargetingTeamField()))) {
+							if (NPP::EnableDebugging) {
+								Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+							}
+
 							return 0;
 						}
 					}
@@ -297,17 +428,29 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 							FString dinoName;
 							DamageCauser->NameField().ToString(&dinoName);
 							if (dinoName.Contains("Corrupt")) {
+								if (NPP::EnableDebugging) {
+									Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+								}
+
 								return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 							}
 						}
 
 						if (NPP::AllowWildDinoDamage && DamageCauser->TargetingTeamField() < 10000) {
+							if (NPP::EnableDebugging) {
+								Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+							}
+
 							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 						}
 
 						// Dino is in a tribe
 						if (DamageCauser->TargetingTeamField() > 10000 &&
 								(IsTribeProtected(DamageCauser->TargetingTeamField()) || IsTribeProtected(_this->TargetingTeamField()))) {
+							if (NPP::EnableDebugging) {
+								Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+							}
+
 							return 0;
 						}
 					}
@@ -318,12 +461,20 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 						AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(steam_id);
 
 						if (IsAdmin(steam_id)) {
+							if (NPP::EnableDebugging) {
+								Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+							}
+
 							return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 						}
 
 						if (IsPlayerProtected(player)) {
 							if (!NPP::AllowNewPlayersToDamageEnemyStructures) {
 								if (attacked_tribeid < 100000 || attacked_tribeid == attacking_tribeid) {
+									if (NPP::EnableDebugging) {
+										Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+									}
+
 									return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 								}
 								if (NPP::TimerProt::Get().IsNextMessageReady(steam_id)) {
@@ -335,6 +486,11 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 											attacked_tribeid);
 									}
 								}
+
+								if (NPP::EnableDebugging) {
+									Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+								}
+
 								return 0;
 							}
 						}
@@ -349,6 +505,11 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 											steam_id, attacking_tribeid, attacked_tribeid);
 									}
 								}
+
+								if (NPP::EnableDebugging) {
+									Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+								}
+
 								return 0;
 							}
 						}
@@ -357,6 +518,10 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 				//EventInstigator == NULL
 				else {
 					if (attacked_tribeid == attacking_tribeid) {
+						if (NPP::EnableDebugging) {
+							Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+						}
+
 						return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 					}
 					if (IsTribeProtected(attacked_tribeid)) {
@@ -365,11 +530,19 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 								FString dinoName;
 								DamageCauser->NameField().ToString(&dinoName);
 								if (dinoName.Contains("Corrupt")) {
+									if (NPP::EnableDebugging) {
+										Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+									}
+
 									return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 								}
 							}
 
 							if (NPP::AllowWildDinoDamage && DamageCauser->TargetingTeamField() < 10000) {
+								if (NPP::EnableDebugging) {
+									Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+								}
+
 								return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 							}
 						}
@@ -386,9 +559,18 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 								}
 							}
 						}
+
+						if (NPP::EnableDebugging) {
+							Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+						}
+
 						return 0;
 					}
 					if (IsTribeProtected(attacking_tribeid) && !NPP::AllowNewPlayersToDamageEnemyStructures) {
+						if (NPP::EnableDebugging) {
+							Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+						}
+
 						return 0;
 					}
 				}
@@ -396,26 +578,54 @@ float Hook_APrimalStructure_TakeDamage(APrimalStructure* _this, float Damage, FD
 			//DamageCauser == NULL
 			else {
 				if (IsTribeProtected(attacked_tribeid)) {
+					if (NPP::EnableDebugging) {
+						Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+					}
+
 					return 0;
 				}
 			}
 		}
-	}	
+	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return APrimalStructure_TakeDamage_original(_this, Damage, DamageEvent, EventInstigator, DamageCauser);
 }
 
 NPP::TimerProt::TimerProt() {
-	player_update_interval_ = NPP::PlayerUpdateIntervalInMins;
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	ArkApi::GetCommands().AddOnTimerCallback("UpdateTimer", std::bind(&NPP::TimerProt::UpdateTimer, this));
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 NPP::TimerProt& NPP::TimerProt::Get() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	static TimerProt instance;
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return instance;
 }
 
 void NPP::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chrono::time_point<std::chrono::system_clock> startDateTime, 
 	std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime, int level, int isNewPlayer) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
 
 	const auto iter = std::find_if(
 		all_players_.begin(), all_players_.end(),
@@ -423,8 +633,13 @@ void NPP::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chro
 			return data->steam_id == steam_id;
 		});
 
-	if (iter != all_players_.end())
+	if (iter != all_players_.end()) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, startDateTime, lastLoginDateTime, level, isNewPlayer));
 	if (isNewPlayer == 1) {
@@ -434,34 +649,60 @@ void NPP::TimerProt::AddPlayerFromDB(uint64 steam_id, uint64 tribe_id, std::chro
 			}
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 void NPP::TimerProt::AddNewPlayer(uint64 steam_id, uint64 tribe_id) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const auto iter = std::find_if(
 		all_players_.begin(), all_players_.end(),
 		[steam_id](const std::shared_ptr<AllPlayerData>& data) { 
 			return data->steam_id == steam_id;
 		});
 
-	if (iter != all_players_.end())
+	if (iter != all_players_.end()) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 	all_players_.push_back(std::make_shared<AllPlayerData>(steam_id, tribe_id, std::chrono::system_clock::now(), std::chrono::system_clock::now(), 1, 1));
 	if (!IsAdmin(steam_id)) {
 		if (std::count(NPP::nppTribesList.begin(), NPP::nppTribesList.end(), tribe_id) < 1) {
 			NPP::nppTribesList.push_back(tribe_id);
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 void NPP::TimerProt::AddOnlinePlayer(uint64 steam_id, uint64 team_id) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const auto iter = std::find_if(
 		online_players_.begin(), online_players_.end(),
 		[steam_id](const std::shared_ptr<OnlinePlayersData>& data) { 
 			return data->steam_id == steam_id; 
 		});
 
-	if (iter != online_players_.end())
+	if (iter != online_players_.end()) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	std::chrono::time_point<std::chrono::system_clock> startDateTime = std::chrono::system_clock::now();
 	std::chrono::time_point<std::chrono::system_clock> lastLoginDateTime = std::chrono::system_clock::now();
@@ -481,9 +722,17 @@ void NPP::TimerProt::AddOnlinePlayer(uint64 steam_id, uint64 team_id) {
 	}
 
 	online_players_.push_back(std::make_shared<OnlinePlayersData>(steam_id, team_id, startDateTime, lastLoginDateTime, level, isNewPlayer, nextMessageTime));
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 void NPP::TimerProt::RemovePlayer(uint64 steam_id) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const auto iter = std::find_if(
 		online_players_.begin(), online_players_.end(),
 		[steam_id](const std::shared_ptr<OnlinePlayersData>& data) { 
@@ -493,9 +742,17 @@ void NPP::TimerProt::RemovePlayer(uint64 steam_id) {
 	if (iter != online_players_.end()) {
 		online_players_.erase(std::remove(online_players_.begin(), online_players_.end(), *iter), online_players_.end());
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 bool NPP::TimerProt::IsNextMessageReady(uint64 steam_id) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	for (const auto& data : online_players_) {
 		if (data->steam_id == steam_id) {
 			const auto now_time = std::chrono::system_clock::now();
@@ -503,23 +760,43 @@ bool NPP::TimerProt::IsNextMessageReady(uint64 steam_id) {
 
 			if (diff.count() <= 0) {
 				data->nextMessageTime = now_time + std::chrono::seconds(NPP::MessageIntervalInSecs);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+				}
+
 				return true;
 			}
 			else {
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+				}
+
 				return false;
 			}
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return true;
 }
 
 void NPP::TimerProt::UpdateLevelAndTribe() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
 
 	for (const auto& data : online_players_) {
 
 		AShooterPlayerController* player = ArkApi::GetApiUtils().FindPlayerFromSteamId(data->steam_id);
 
 		if (ArkApi::IApiUtils::IsPlayerDead(player)) {
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -550,30 +827,49 @@ void NPP::TimerProt::UpdateLevelAndTribe() {
 			}
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 std::vector<std::shared_ptr<NPP::TimerProt::OnlinePlayersData>> NPP::TimerProt::GetOnlinePlayers() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return online_players_;
 }
 
 std::vector<std::shared_ptr<NPP::TimerProt::AllPlayerData>> NPP::TimerProt::GetAllPlayers() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return all_players_;
 }
 
 void NPP::TimerProt::UpdateTimer() {
-	const auto now_time = std::chrono::system_clock::now();
 
-	auto diff = std::chrono::duration_cast<std::chrono::seconds>(NPP::next_player_update - now_time);
+	auto diff = std::chrono::duration_cast<std::chrono::seconds>(NPP::next_player_update - std::chrono::system_clock::now());
 
 	if (diff.count() <= 0) {
 		if (NPP::EnableDebugging) {
-			Log::GetLog()->warn("Running NPP update tasks...");
+			Log::GetLog()->info("Running NPP update tasks in {}...", __FUNCTION__);
 		}
-		LoadNppPermissionsArray();
-		auto player_interval = std::chrono::minutes(player_update_interval_);
-		NPP::next_player_update = now_time + player_interval;
+
 		NPP::TimerProt::UpdateLevelAndTribe();
 		RemoveExpiredTribesProtection();
+
+		NPP::next_player_update = std::chrono::system_clock::now() + std::chrono::minutes(NPP::PlayerUpdateIntervalInMins);
 
 		if (NPP::EnableDebugging) {
 			auto all_players_ = NPP::TimerProt::GetAllPlayers();
@@ -637,17 +933,8 @@ void NPP::TimerProt::UpdateTimer() {
 
 			Log::GetLog()->info("----------------------------------------------------------------------");
 			Log::GetLog()->info(" ");
-			Log::GetLog()->info("----------------------------------------------------------------------");
 
-			Log::GetLog()->info("nppAdminArray:");
-			for (uint64 data : nppAdminArray) {
-				Log::GetLog()->info(data);
-			}
-
-			Log::GetLog()->info("----------------------------------------------------------------------");
-			Log::GetLog()->info(" ");
-
-			Log::GetLog()->info("PlayerUpdateIntervalInMins timer finished: NPP Protections updated.");
+			Log::GetLog()->info("PlayerUpdateIntervalInMins timer finished: NPP Protections updated in {}...", __FUNCTION__);
 		}
 	}
 }

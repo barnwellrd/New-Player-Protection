@@ -56,7 +56,6 @@ namespace NPP {
 	std::vector<std::string> StructureExemptions;
 
 	std::chrono::time_point<std::chrono::system_clock>  next_player_update;
-	std::chrono::time_point<std::chrono::system_clock>  next_db_update;
 
 	nlohmann::json config;
 	nlohmann::json TempConfig;
@@ -70,10 +69,6 @@ namespace NPP {
 	std::vector<uint64> removedPveTribesList;
 
 	std::vector<uint64> nppTribesList;
-
-	TArray<uint64> nppAdminArray;
-
-	bool FirstLoad = true;
 
 	class TimerProt {
 		public:
@@ -119,8 +114,6 @@ namespace NPP {
 
 			void UpdateTimer();
 
-			int player_update_interval_;
-
 			std::vector<std::shared_ptr<OnlinePlayersData>> online_players_;
 			std::vector<std::shared_ptr<AllPlayerData>> all_players_;
 
@@ -138,6 +131,9 @@ namespace NPP {
 	};
 
 	FString GetBlueprint(UObjectBase* object) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Entering {}.", __FUNCTION__);
+		}
 
 		if (object != nullptr && object->ClassField() != nullptr) {
 			FString path_name;
@@ -150,10 +146,17 @@ namespace NPP {
 						CaseSensitive)
 						? 3
 						: 1))) + "'";
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+				}
 
 				return path_name.Replace(L"Default__", L"", ESearchCase::CaseSensitive);
 			}
 		}
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return FString("");
 	}
 }

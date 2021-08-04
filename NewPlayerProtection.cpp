@@ -20,9 +20,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
 		Init();
-
-		// Timer to init Permission members array after Permission.dll has been loaded
-		API::Timer::Get().DelayExecute(&LoadNppPermissionsArray, 60);
 		break;
 	case DLL_PROCESS_DETACH:
 		RemoveHooks();
