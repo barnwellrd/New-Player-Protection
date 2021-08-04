@@ -13,14 +13,13 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Debugger|x64.ActiveCfg = Debugger|x64
-		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Debugger|x64.Build.0 = Debugger|x64
-		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Debugger|x86.ActiveCfg = Debugger|Win32
-		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Debugger|x86.Build.0 = Debugger|Win32
+		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Debugger|x64.ActiveCfg = Release|x64
+		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Debugger|x64.Build.0 = Release|x64
+		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Debugger|x86.ActiveCfg = Release|x64
+		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Debugger|x86.Build.0 = Release|x64
 		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Release|x64.ActiveCfg = Release|x64
 		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Release|x64.Build.0 = Release|x64
-		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Release|x86.ActiveCfg = Release|Win32
-		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Release|x86.Build.0 = Release|Win32
+		{14480E30-A0C2-4931-9B3E-C60A00929BF7}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

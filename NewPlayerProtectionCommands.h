@@ -1,14 +1,31 @@
 #pragma once
 
 inline void Info(AShooterPlayerController* player) {
-		ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
-			NPP::MessageDisplayDelay, nullptr, *NPP::NPPInfoMessage, NPP::HoursOfProtection, 
-			NPP::MaxLevel);
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
+	ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
+		NPP::MessageDisplayDelay, nullptr, *NPP::NPPInfoMessage, NPP::HoursOfProtection, 
+		NPP::MaxLevel);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void Disable(AShooterPlayerController* player) {
-	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player) || !NPP::AllowPlayersToDisableOwnedTribeProtection)
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
+	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player) || !NPP::AllowPlayersToDisableOwnedTribeProtection) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	// if not PVE player
 	if (!IsPVETribe(player->TargetingTeamField())) {
@@ -78,11 +95,24 @@ inline void Disable(AShooterPlayerController* player) {
 		ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
 			NPP::MessageDisplayDelay, nullptr, *NPP::PVEDisablePlayerMessage);
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void Status(AShooterPlayerController* player) {
-	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
+	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player)) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
 
@@ -154,11 +184,24 @@ inline void Status(AShooterPlayerController* player) {
 		ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
 			NPP::MessageDisplayDelay, nullptr, *NPP::PVEStatusMessage);
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void GetTribeID(AShooterPlayerController* player) {
-	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
+	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player)) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECollisionChannel::ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
 		false, false, false);
@@ -173,15 +216,28 @@ inline void GetTribeID(AShooterPlayerController* player) {
 		ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
 			NPP::MessageDisplayDelay, nullptr, *NPP::NoStructureForTribeIDText);
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 // "!npp getpath"
 //Get the Plugin's blueprint path of target structure
 //May vary wildly from spawn Blueprint, so use this command's output plugin paths
 inline void GetTargetPath(AShooterPlayerController* player) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	//if player is dead or doesn't exist, break
-	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player))
+	if (!player || !player->PlayerStateField() || ArkApi::IApiUtils::IsPlayerDead(player)) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	//get aimed target
 	AActor* Actor = player->GetPlayerCharacter()->GetAimedActor(ECollisionChannel::ECC_GameTraceChannel2, nullptr, 0.0, 0.0, nullptr, nullptr,
@@ -199,9 +255,17 @@ inline void GetTargetPath(AShooterPlayerController* player) {
 		ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
 			NPP::MessageDisplayDelay, nullptr, *NPP::NotAStructureMessage);
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void ChatCommand(AShooterPlayerController* player, FString* message, int mode) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	TArray<FString> parsed;
 	message->ParseIntoArray(parsed, L" ", true);
 
@@ -231,14 +295,27 @@ inline void ChatCommand(AShooterPlayerController* player, FString* message, int 
 		ArkApi::GetApiUtils().SendNotification(player, NPP::MessageColor, NPP::MessageTextSize, 
 			NPP::MessageDisplayDelay, nullptr, *NPP::NPPInvalidCommand);
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void ConsoleRemoveProtection(APlayerController* player_controller, FString* cmd, bool) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
 
 	//if Admin
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get()) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
 
@@ -257,6 +334,10 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 		}
 		catch (const std::exception& exception) {
 			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -330,14 +411,27 @@ inline void ConsoleRemoveProtection(APlayerController* player_controller, FStrin
 				NPP::MessageDisplayDelay, nullptr, *NPP::AdminNoTribeExistsMessage, tribe_id);
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool boolean) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const auto shooter_controller = static_cast<AShooterPlayerController*>(player);
 
 	//if Admin
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get()) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
 
@@ -356,6 +450,10 @@ inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool
 		}
 		catch (const std::exception& exception) {
 			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -439,14 +537,27 @@ inline void ConsoleResetProtection(APlayerController* player, FString* cmd, bool
 				NPP::MessageDisplayDelay, nullptr, *NPP::AdminNoTribeExistsMessage, tribe_id);
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool boolean) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const auto shooter_controller = static_cast<AShooterPlayerController*>(player);
 
 	//if Admin
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get()) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(shooter_controller);
 
@@ -464,14 +575,24 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 
 		try {
 			tribe_id = std::stoull(*parsed[1]);
-			hours = std::stoull(*parsed[2]);
-			if (hours < 0) {
+			
+			if (parsed[2].Contains("-")) {
 				Log::GetLog()->warn("({} {}) Parsing error: Hours cannot be negative.", __FILE__, __FUNCTION__);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+				}
+
 				return;
 			}
+
+			hours = std::stoull(*parsed[2]);
 		}
 		catch (const std::exception& exception) {
 			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -554,9 +675,17 @@ inline void ConsoleAddProtection(APlayerController* player, FString* cmd, bool b
 				NPP::MessageDisplayDelay, nullptr, *NPP::AdminNoTribeExistsMessage, tribe_id);
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	FString reply;
 
 	bool found = false;
@@ -574,6 +703,10 @@ inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPack
 		}
 		catch (const std::exception& exception) {
 			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -644,9 +777,17 @@ inline void RconRemoveProtection(RCONClientConnection* rcon_connection, RCONPack
 			rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminNoTribeExistsMessage, tribe_id));
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	FString reply;
 
 	bool found = false;
@@ -664,6 +805,10 @@ inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacke
 		}
 		catch (const std::exception& exception) {
 			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -744,9 +889,17 @@ inline void RconResetProtection(RCONClientConnection* rcon_connection, RCONPacke
 			rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminNoTribeExistsMessage, tribe_id));
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	FString reply;
 
 	bool found = false;
@@ -762,14 +915,22 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 
 		try {
 			tribe_id = std::stoull(*parsed[1]);
-			hours = std::stoull(*parsed[2]);
+			hours = std::stoi(*parsed[2]);
 			if (hours < 0) {
 				Log::GetLog()->warn("({} {}) Parsing error: Hours cannot be negative.", __FILE__, __FUNCTION__);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+				}
+
 				return;
 			}
 		}
 		catch (const std::exception& exception) {
 			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -849,14 +1010,27 @@ inline void RconAddProtection(RCONClientConnection* rcon_connection, RCONPacket*
 			rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminNoTribeExistsMessage, tribe_id));
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const auto shooter_controller = static_cast<AShooterPlayerController*>(player);
 
 	//if Admin
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get()) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	uint64 steam_id = ArkApi::IApiUtils::GetSteamIdFromController(player);
 
@@ -875,11 +1049,19 @@ inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
 			setToPve = std::stoull(*parsed[2]);
 			if (setToPve < 0 || setToPve > 1) {
 				Log::GetLog()->warn("({} {}) Parsing error: setToPve can only be a 1 or 0.", __FILE__, __FUNCTION__);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+				}
+
 				return;
 			}
 		}
 		catch (const std::exception& exception) {
 			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -970,9 +1152,16 @@ inline void ConsoleSetPVE(APlayerController* player, FString* cmd, bool boolean)
 		}
 	}
 
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	FString reply;
 
 	bool found = false;
@@ -990,11 +1179,19 @@ inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_p
 			setToPve = std::stoull(*parsed[2]);
 			if (setToPve != 0 && setToPve != 1) {
 				Log::GetLog()->warn("({} {}) Parsing error: setToPve can only be a 1 or 0.", __FILE__, __FUNCTION__);
+				if (NPP::EnableDebugging) {
+					Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+				}
+
 				return;
 			}
 		}
 		catch (const std::exception& exception) {
 			Log::GetLog()->warn("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			if (NPP::EnableDebugging) {
+				Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+			}
+
 			return;
 		}
 
@@ -1080,21 +1277,45 @@ inline void RconSetPVE(RCONClientConnection* rcon_connection, RCONPacket* rcon_p
 			rcon_connection->SendMessageW(rcon_packet->Id, 0, &FString::Format(*NPP::AdminNoTribeExistsMessage, tribe_id));
 		}
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void InitChatCommands() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	FString cmd1 = NPP::NPPCommandPrefix;
 	cmd1 = cmd1.Append("npp");
 	ArkApi::GetCommands().AddChatCommand(cmd1, &ChatCommand);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void RemoveChatCommands() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	FString cmd1 = NPP::NPPCommandPrefix;
 	cmd1 = cmd1.Append("npp");
 	ArkApi::GetCommands().RemoveChatCommand(cmd1);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void ResetPlayerProtection() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
 	auto all_online_players_ = NPP::TimerProt::Get().GetOnlinePlayers();
 
@@ -1109,31 +1330,67 @@ inline void ResetPlayerProtection() {
 
 	ReloadProtectedTribesArray();
 	RemoveExpiredTribesProtection();
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 void ReloadConfig() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	RemoveChatCommands();
 	LoadConfig();
 	InitChatCommands();
 	ResetPlayerProtection();
-	LoadNppPermissionsArray();
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void ConsoleReloadConfig(APlayerController* player, FString* cmd, bool boolean) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	const auto shooter_controller = static_cast<AShooterPlayerController*>(player);
 
 	//if not Admin
-	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get())
+	if (!shooter_controller || !shooter_controller->PlayerStateField() || !shooter_controller->bIsAdmin().Get()) {
+		if (NPP::EnableDebugging) {
+			Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+		}
+
 		return;
+	}
 
 	ReloadConfig();
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void RconReloadConfig(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	ReloadConfig();
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void InitCommands() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	InitChatCommands();
 	ArkApi::GetCommands().AddConsoleCommand("NPP.RemoveProtection", &ConsoleRemoveProtection);
 	ArkApi::GetCommands().AddRconCommand("NPP.RemoveProtection",	&RconRemoveProtection);
@@ -1145,9 +1402,17 @@ inline void InitCommands() {
 	ArkApi::GetCommands().AddRconCommand("NPP.ReloadConfig",		&RconReloadConfig);
 	ArkApi::GetCommands().AddConsoleCommand("NPP.SetPVE",			&ConsoleSetPVE);
 	ArkApi::GetCommands().AddRconCommand("NPP.SetPVE",				&RconSetPVE);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void RemoveCommands() {	
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	RemoveChatCommands();
 	ArkApi::GetCommands().RemoveConsoleCommand("NPP.RemoveProtection");
 	ArkApi::GetCommands().RemoveConsoleCommand("NPP.ResetProtection");
@@ -1158,4 +1423,8 @@ inline void RemoveCommands() {
 	ArkApi::GetCommands().RemoveRconCommand("NPP.ReloadConfig");
 	ArkApi::GetCommands().RemoveConsoleCommand("NPP.SetPVE");
 	ArkApi::GetCommands().RemoveRconCommand("NPP.SetPVE");
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }

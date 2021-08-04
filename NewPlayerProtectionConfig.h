@@ -3,6 +3,10 @@
 #include <ArkPermissions.h>
 
 std::string NPP::GetTimestamp(std::chrono::time_point<std::chrono::system_clock> datetime) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	auto ttime_t = std::chrono::system_clock::to_time_t(datetime);
 	auto tp_sec = std::chrono::system_clock::from_time_t(ttime_t);
 	std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(datetime - tp_sec);
@@ -19,10 +23,18 @@ std::string NPP::GetTimestamp(std::chrono::time_point<std::chrono::system_clock>
 	result.append(".");
 	result.append(std::to_string(ms.count()));
 
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return result;
 }
 
 std::chrono::time_point<std::chrono::system_clock> NPP::GetDateTime(std::string timestamp) {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	int yyyy;
 	int mm;
 	int dd;
@@ -49,21 +61,47 @@ std::chrono::time_point<std::chrono::system_clock> NPP::GetDateTime(std::string 
 	std::chrono::system_clock::time_point time_point_result = std::chrono::system_clock::from_time_t(ttime_t);
 
 	time_point_result += std::chrono::milliseconds(fff);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return time_point_result;
 }
 
 bool IsAdmin(uint64 steam_id) {
-	return (NPP::IgnoreAdmins && NPP::nppAdminArray.Contains(steam_id));
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
+	return (NPP::IgnoreAdmins && Permissions::IsPlayerInGroup(steam_id, NPP::NPPAdminGroup));
 }
 
 sqlite::database& NPP::GetDB() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	static sqlite::database db(config["General"].value("DbPathOverride", "").empty()
 		? ArkApi::Tools::GetCurrentDir() + "/ArkApi/Plugins/NewPlayerProtection/NewPlayerProtection.db"
 		: config["General"]["DbPathOverride"]);
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
+
 	return db;
 }
 
 void LoadDB() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	auto& db = NPP::GetDB();
 
 	try {
@@ -128,9 +166,17 @@ void LoadDB() {
 	catch (const sqlite::sqlite_exception& exception) {
 		Log::GetLog()->error("({} {}) Unexpected DB error loading pve_tribes table: {}", __FILE__, __FUNCTION__, exception.what());
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 void ReloadProtectedTribesArray() {
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	auto all_players_ = NPP::TimerProt::Get().GetAllPlayers();
 
 	NPP::nppTribesList.clear();
@@ -142,20 +188,9 @@ void ReloadProtectedTribesArray() {
 			}
 		}
 	}
-}
 
-void LoadNppPermissionsArray() {
 	if (NPP::EnableDebugging) {
-		Log::GetLog()->warn("Executing LoadNppPermissionsArray...");
-	}
-	NPP::nppAdminArray.Empty();
-	NPP::nppAdminArray.Append(Permissions::GetGroupMembers(NPP::NPPAdminGroup));
-	if (NPP::FirstLoad) {
-		if (NPP::EnableDebugging) {
-			Log::GetLog()->warn("Executing LoadNppPermissionsArray. First call, so loading the DB...");
-		}
-		LoadDB();
-		NPP::FirstLoad = false;
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
 	}
 }
 
@@ -169,10 +204,12 @@ inline void LoadConfig() {
 	file >> NPP::config;
 	file.close();
 
-	NPP::next_player_update = std::chrono::system_clock::now();
-
 	NPP::PlayerUpdateIntervalInMins = NPP::config["General"]["PlayerUpdateIntervalInMins"];
 	NPP::EnableDebugging = NPP::config["General"]["EnableDebugging"];
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Entering {}.", __FUNCTION__);
+	}
+
 	NPP::IgnoreAdmins = NPP::config["General"]["IgnoreAdmins"];
 	NPP::AllowNewPlayersToDamageEnemyStructures = NPP::config["General"]["AllowNewPlayersToDamageEnemyStructures"];
 	NPP::AllowPlayersToDisableOwnedTribeProtection = NPP::config["General"]["AllowPlayersToDisableOwnedTribeProtection"];
@@ -229,9 +266,19 @@ inline void LoadConfig() {
 	for (nlohmann::json x : NPP::TempConfig) {
 		NPP::StructureExemptions.push_back(FString(ArkApi::Tools::Utf8Decode(x).c_str()).ToString());
 	}
+
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
 
 inline void InitConfig() {
 	LoadConfig();
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Finished Loading Config in {}.", __FUNCTION__);
+	}
 	LoadDB();
+	if (NPP::EnableDebugging) {
+		Log::GetLog()->info("Exiting {}.", __FUNCTION__);
+	}
 }
